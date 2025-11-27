@@ -1,0 +1,615 @@
+/* GameBoard Styles - Compact Version */
+
+.game-board {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-xs);
+  position: relative;
+  background: 
+    radial-gradient(ellipse at center, rgba(45, 80, 45, 0.2) 0%, transparent 70%),
+    var(--color-bg-darkest);
+  overflow: hidden;
+}
+
+/* 3x3 Grid Layout - 더 컴팩트하게 */
+.board-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.8fr 1fr;
+  grid-template-rows: 1fr 1.8fr 1fr;
+  gap: 4px;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.grid-position {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Position classes */
+.pos-1 { grid-area: 1 / 1 / 2 / 2; }
+.pos-2 { grid-area: 1 / 2 / 2 / 3; }
+.pos-3 { grid-area: 1 / 3 / 2 / 4; }
+.pos-4 { grid-area: 2 / 1 / 3 / 2; }
+.pos-5 { grid-area: 2 / 2 / 3 / 3; }
+.pos-6 { grid-area: 2 / 3 / 3 / 4; }
+.pos-7 { grid-area: 3 / 1 / 4 / 2; }
+.pos-8 { grid-area: 3 / 2 / 4 / 3; }
+.pos-9 { grid-area: 3 / 3 / 4 / 4; }
+
+/* Grid Cells - 컴팩트 */
+.grid-cell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+/* ------------------------------------------- */
+/* 중앙 셀 (pos-5) */
+/* ------------------------------------------- */
+
+.center-cell {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
+}
+
+.center-cell.focused {
+  border-color: var(--color-gold);
+  box-shadow: 
+    inset 0 0 30px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(212, 175, 55, 0.15);
+}
+
+/* 중앙 무대 전체 영역 */
+.target-area {
+  position: relative; 
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 비디오 컨테이너 - 컴팩트 */
+.target-video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg-darkest);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.target-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+}
+
+.video-placeholder-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6); 
+}
+
+.video-placeholder-overlay span { 
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+/* 내가 타겟일 때 오버레이 */
+.my-target-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%);
+  gap: 8px;
+}
+
+.my-target-icon {
+  font-size: 36px;
+  animation: pulse 2s infinite;
+}
+
+.my-target-text {
+  font-size: 14px;
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+/* 비디오 라벨 */
+.target-video-label {
+  position: absolute;
+  top: 0; 
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+  z-index: 20;
+}
+
+.target-video-label .target-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+/* 중앙 카드 영역 - 수정 버전 */
+.target-cards-overlay-container {
+  position: absolute;
+  bottom: 20px;
+  left: 0;        /* ✅ 셀 전체를 쓰게 */
+  right: 0;       /* ✅ 셀 전체를 쓰게 */
+  transform: none;/* ✅ 가운데 기준 translateX 제거 */
+
+  display: flex;
+  justify-content: center;   /* ✅ 카드 묶음 전체를 가운데로 */
+  align-items: flex-end;
+  z-index: 50;
+  pointer-events: all;
+}
+
+/* 카드 래퍼 - 겹치는 방식은 유지 */
+.target-card-wrapper {
+  cursor: pointer;
+  position: relative;
+  margin-left: -25px;       /* 두 번째 카드부터 왼쪽으로 겹치게 */
+  flex-shrink: 0;
+  transform-origin: bottom center;
+}
+
+.target-card-wrapper:first-child {
+  margin-left: 0;
+}
+
+.target-card-wrapper.other-hovering {
+  z-index: 100 !important;
+}
+
+.target-card-wrapper.other-hovering::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border: 2px solid var(--color-red);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 10px var(--color-red);
+  animation: hoverPulse 1s infinite;
+}
+
+.target-card-wrapper.local-hovering {
+  z-index: 50 !important;
+}
+
+.hover-indicator {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  background: var(--color-red);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+@keyframes hoverPulse {
+  0%, 100% { box-shadow: 0 0 10px var(--color-red); }
+  50% { box-shadow: 0 0 18px var(--color-red); }
+}
+
+/* 하단 힌트 영역 - 최소화 */
+.center-hint-area {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 60;
+}
+
+.draw-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gold);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.draw-hint.waiting-hint {
+  color: var(--color-text-muted);
+}
+
+.waiting-turn {
+  text-align: center;
+}
+
+.turn-indicator {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ------------------------------------------- */
+/* 조커 알림 - 컴팩트 */
+/* ------------------------------------------- */
+
+.joker-alert {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.joker-alert-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 25px 40px;
+  background: linear-gradient(135deg, #2a1a3a 0%, #1a0a2a 100%);
+  border: 3px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: 
+    0 0 40px rgba(196, 30, 58, 0.7), 
+    0 0 80px rgba(212, 175, 55, 0.3);
+}
+
+.joker-icon-large {
+  font-size: 50px;
+  animation: jokerBounce 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes jokerBounce {
+  0% { transform: scale(1) rotate(-3deg); }
+  100% { transform: scale(1.05) rotate(3deg); }
+}
+
+.joker-text-large {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--color-red);
+  text-shadow: 0 0 8px rgba(196, 30, 58, 0.8);
+}
+
+/* ------------------------------------------- */
+/* 다른 플레이어 셀 - 컴팩트 */
+/* ------------------------------------------- */
+
+.other-cell { 
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+.other-cell.target-player { 
+  border-color: var(--color-gold);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+}
+
+.player-video-container {
+  width: 60px;
+  height: 45px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg-darkest);
+  flex-shrink: 0;
+}
+
+.player-video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-video-container .video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-elevated);
+}
+
+.player-video-container .video-placeholder span {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.player-info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.player-nickname {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.card-count-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card-with-count-wrapper {
+  position: relative;
+  display: flex; 
+  align-items: center;
+  gap: 3px; 
+}
+
+.card-count-overlay {
+  font-size: 11px; 
+  font-weight: 700;
+  color: var(--color-gold);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ------------------------------------------- */
+/* 내 카드 영역 (pos-8) - 컴팩트 */
+/* ------------------------------------------- */
+
+.my-cell {
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+.my-cell.is-target {
+  border-color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.target-badge {
+  font-size: 14px;
+}
+
+.my-cards-hint {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.my-cards-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 2px;
+  min-height: 50px;
+  overflow: visible;
+}
+
+.my-card-wrapper {
+  flex-shrink: 0;
+  margin-left: -12px;
+  transition: all var(--transition-fast);
+}
+
+.my-card-wrapper:first-child {
+  margin-left: 0;
+}
+
+.my-card-wrapper:hover {
+  transform: translateY(-8px) scale(1.1) !important;
+  z-index: 100 !important;
+}
+
+.eliminated-badge {
+  padding: 4px 10px;
+  background: linear-gradient(135deg, var(--color-green) 0%, var(--color-green-light) 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+}
+
+.eliminated-badge.small {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+.current-turn-indicator {
+  margin-top: 2px;
+}
+
+.current-turn-indicator span {
+  padding: 2px 6px;
+  background: var(--color-red);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 3px;
+}
+
+/* ------------------------------------------- */
+/* 빈 셀 */
+/* ------------------------------------------- */
+
+.empty-cell {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.03);
+}
+
+.empty-slot {
+  opacity: 0.15;
+}
+
+.empty-icon {
+  font-size: 16px;
+  color: var(--color-text-muted);
+}
+
+/* Turn Overlay - 컴팩트 */
+.turn-overlay {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  background: var(--color-gold);
+  color: var(--color-bg-darkest);
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+  z-index: 100;
+}
+
+/* ------------------------------------------- */
+/* Responsive */
+/* ------------------------------------------- */
+
+@media (max-width: 900px) {
+  .board-grid {
+    grid-template-columns: 1fr 2fr 1fr;
+  }
+  
+  .target-cards-overlay-container {
+    height: 90px;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-board {
+    padding: 2px;
+  }
+  
+  .board-grid {
+    gap: 2px;
+  }
+  
+  .pos-7, .pos-9 {
+    display: none;
+  }
+  
+  .board-grid {
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: 1fr 1.5fr 1fr;
+  }
+  
+  .pos-8 {
+    grid-area: 3 / 1 / 4 / 4;
+  }
+  /* 뽑는 사람 라벨 (내가 타겟일 때) */
+.drawer-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  text-align: center;
+  z-index: 25;
+}
+
+.drawer-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.drawer-action {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
+}
+
+/* 조커 알림 - 인라인 (카드 위) */
+.joker-alert-inline {
+  position: absolute;
+  bottom: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #2a1a3a 0%, #1a0a2a 100%);
+  border: 3px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 30px rgba(196, 30, 58, 0.8);
+  z-index: 200;
+}
+
+.joker-icon-inline {
+  font-size: 32px;
+}
+
+.joker-text-inline {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--color-red);
+}
+
+/* 전환 중인 빈 셀 */
+.empty-cell.transitioning {
+  background: rgba(212, 175, 55, 0.05);
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.empty-cell.transitioning .empty-icon {
+  color: var(--color-gold);
+  font-size: 24px;
+}
+
+/* 내가 타겟일 때 힌트 */
+.my-cards-hint {
+  font-size: 12px;
+  color: var(--color-gold);
+  text-align: center;
+  padding: 8px;
+}
+
+/* 카드 수 텍스트 */
+.card-count-text {
+  font-size: 12px;
+  color: var(--color-gold);
+}
+
+.eliminated-text {
+  font-size: 10px;
+  color: var(--color-green);
+}
+}
