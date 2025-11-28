@@ -12,7 +12,7 @@
   overflow: hidden;
 }
 
-/* 3x3 Grid Layout - 더 컴팩트하게 */
+/* 3x3 Grid Layout - Ã«Ââ€ Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸Ã­â€¢ËœÃªÂ²Å’ */
 .board-grid {
   flex: 1;
   display: grid;
@@ -40,7 +40,7 @@
 .pos-8 { grid-area: 3 / 2 / 4 / 3; }
 .pos-9 { grid-area: 3 / 3 / 4 / 4; }
 
-/* Grid Cells - 컴팩트 */
+/* Grid Cells - Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸ */
 .grid-cell {
   width: 100%;
   height: 100%;
@@ -55,7 +55,7 @@
 }
 
 /* ------------------------------------------- */
-/* 중앙 셀 (pos-5) */
+/* Ã¬Â¤â€˜Ã¬â€¢â„¢ Ã¬â€¦â‚¬ (pos-5) */
 /* ------------------------------------------- */
 
 .center-cell {
@@ -71,7 +71,7 @@
     0 0 15px rgba(212, 175, 55, 0.15);
 }
 
-/* 중앙 무대 전체 영역 */
+/* Ã¬Â¤â€˜Ã¬â€¢â„¢ Ã«Â¬Â´Ã«Å’â‚¬ Ã¬Â â€žÃ¬Â²Â´ Ã¬ËœÂÃ¬â€”Â­ */
 .target-area {
   position: relative; 
   width: 100%;
@@ -81,7 +81,7 @@
   justify-content: center;
 }
 
-/* 비디오 컨테이너 - 컴팩트 */
+/* Ã«Â¹â€žÃ«â€â€Ã¬ËœÂ¤ Ã¬Â»Â¨Ã­â€¦Å’Ã¬ÂÂ´Ã«â€žË† - Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸ */
 .target-video-container {
   position: absolute;
   top: 0;
@@ -96,7 +96,9 @@
 .target-video {
   width: 100%;
   height: 100%;
-  object-fit: cover; 
+  object-fit: cover;
+  /* ìº  ì¢Œìš° ë°˜ì „ - ëˆˆë¹› ì‹¬ë¦¬ì „ì„ ìœ„í•´ */
+  transform: scaleX(-1);
 }
 
 .video-placeholder-overlay {
@@ -117,7 +119,7 @@
   color: var(--color-gold);
 }
 
-/* 내가 타겟일 때 오버레이 */
+/* Ã«â€šÂ´ÃªÂ°â‚¬ Ã­Æ’â‚¬ÃªÂ²Å¸Ã¬ÂÂ¼ Ã«â€¢Å’ Ã¬ËœÂ¤Ã«Â²â€žÃ«Â Ë†Ã¬ÂÂ´ */
 .my-target-overlay {
   position: absolute;
   top: 0;
@@ -143,7 +145,7 @@
   font-weight: 600;
 }
 
-/* 비디오 라벨 */
+/* Ã«Â¹â€žÃ«â€â€Ã¬ËœÂ¤ Ã«ÂÂ¼Ã«Â²Â¨ */
 .target-video-label {
   position: absolute;
   top: 0; 
@@ -160,26 +162,26 @@
   color: var(--color-gold);
 }
 
-/* 중앙 카드 영역 - 수정 버전 */
+/* Ã¬Â¤â€˜Ã¬â€¢â„¢ Ã¬Â¹Â´Ã«â€œÅ“ Ã¬ËœÂÃ¬â€”Â­ - Ã¬Ë†ËœÃ¬Â â€¢ Ã«Â²â€žÃ¬Â â€ž */
 .target-cards-overlay-container {
   position: absolute;
   bottom: 20px;
-  left: 0;        /* ✅ 셀 전체를 쓰게 */
-  right: 0;       /* ✅ 셀 전체를 쓰게 */
-  transform: none;/* ✅ 가운데 기준 translateX 제거 */
+  left: 0;        /* Ã¢Å“â€¦ Ã¬â€¦â‚¬ Ã¬Â â€žÃ¬Â²Â´Ã«Â¥Â¼ Ã¬â€œÂ°ÃªÂ²Å’ */
+  right: 0;       /* Ã¢Å“â€¦ Ã¬â€¦â‚¬ Ã¬Â â€žÃ¬Â²Â´Ã«Â¥Â¼ Ã¬â€œÂ°ÃªÂ²Å’ */
+  transform: none;/* Ã¢Å“â€¦ ÃªÂ°â‚¬Ã¬Å¡Â´Ã«ÂÂ° ÃªÂ¸Â°Ã¬Â¤â‚¬ translateX Ã¬Â Å“ÃªÂ±Â° */
 
   display: flex;
-  justify-content: center;   /* ✅ 카드 묶음 전체를 가운데로 */
+  justify-content: center;   /* Ã¢Å“â€¦ Ã¬Â¹Â´Ã«â€œÅ“ Ã«Â¬Â¶Ã¬ÂÅ’ Ã¬Â â€žÃ¬Â²Â´Ã«Â¥Â¼ ÃªÂ°â‚¬Ã¬Å¡Â´Ã«ÂÂ°Ã«Â¡Å“ */
   align-items: flex-end;
   z-index: 50;
   pointer-events: all;
 }
 
-/* 카드 래퍼 - 겹치는 방식은 유지 */
+/* Ã¬Â¹Â´Ã«â€œÅ“ Ã«Å¾ËœÃ­ÂÂ¼ - ÃªÂ²Â¹Ã¬Â¹ËœÃ«Å â€ Ã«Â°Â©Ã¬â€¹ÂÃ¬Ââ‚¬ Ã¬Å“Â Ã¬Â§â‚¬ */
 .target-card-wrapper {
   cursor: pointer;
   position: relative;
-  margin-left: -25px;       /* 두 번째 카드부터 왼쪽으로 겹치게 */
+  margin-left: -25px;       /* Ã«â€˜Â Ã«Â²Ë†Ã¬Â§Â¸ Ã¬Â¹Â´Ã«â€œÅ“Ã«Â¶â‚¬Ã­â€žÂ° Ã¬â„¢Â¼Ã¬ÂªÂ½Ã¬Å“Â¼Ã«Â¡Å“ ÃªÂ²Â¹Ã¬Â¹ËœÃªÂ²Å’ */
   flex-shrink: 0;
   transform-origin: bottom center;
 }
@@ -228,7 +230,7 @@
   50% { box-shadow: 0 0 18px var(--color-red); }
 }
 
-/* 하단 힌트 영역 - 최소화 */
+/* Ã­â€¢ËœÃ«â€¹Â¨ Ã­Å¾Å’Ã­Å Â¸ Ã¬ËœÂÃ¬â€”Â­ - Ã¬ÂµÅ“Ã¬â€ Å’Ã­â„¢â€ */
 .center-hint-area {
   position: absolute;
   bottom: 8px;
@@ -260,7 +262,7 @@
 }
 
 /* ------------------------------------------- */
-/* 조커 알림 - 컴팩트 */
+/* Ã¬Â¡Â°Ã¬Â»Â¤ Ã¬â€¢Å’Ã«Â¦Â¼ - Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸ */
 /* ------------------------------------------- */
 
 .joker-alert {
@@ -270,6 +272,91 @@
   transform: translate(-50%, -50%);
   z-index: 2000;
   pointer-events: none;
+}
+
+/* 조커 알림 전체화면 버전 */
+.joker-alert-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.joker-icons-container {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.joker-icon-huge {
+  font-size: 120px;
+  filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.8))
+          drop-shadow(0 0 60px rgba(196, 30, 58, 0.6));
+  animation: jokerPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes jokerPulse {
+  0% { 
+    transform: scale(1); 
+    filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.8))
+            drop-shadow(0 0 60px rgba(196, 30, 58, 0.6));
+  }
+  100% { 
+    transform: scale(1.1); 
+    filter: drop-shadow(0 0 50px rgba(212, 175, 55, 1))
+            drop-shadow(0 0 80px rgba(196, 30, 58, 0.8));
+  }
+}
+
+.joker-text-huge {
+  font-size: 72px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px rgba(196, 30, 58, 0.8));
+  animation: jokerTextGlow 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes jokerTextGlow {
+  0% { filter: drop-shadow(0 0 20px rgba(196, 30, 58, 0.8)); }
+  100% { filter: drop-shadow(0 0 40px rgba(196, 30, 58, 1)); }
+}
+
+.joker-subtext {
+  font-size: 24px;
+  color: var(--color-gold);
+  margin-top: 20px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .joker-icon-huge {
+    font-size: 80px;
+  }
+  
+  .joker-text-huge {
+    font-size: 48px;
+  }
+  
+  .joker-icons-container {
+    gap: 15px;
+  }
+  
+  .joker-subtext {
+    font-size: 18px;
+  }
 }
 
 .joker-alert-content {
@@ -304,7 +391,7 @@
 }
 
 /* ------------------------------------------- */
-/* 다른 플레이어 셀 - 컴팩트 */
+/* Ã«â€¹Â¤Ã«Â¥Â¸ Ã­â€Å’Ã«Â Ë†Ã¬ÂÂ´Ã¬â€“Â´ Ã¬â€¦â‚¬ - Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸ */
 /* ------------------------------------------- */
 
 .other-cell { 
@@ -331,6 +418,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* ìº  ì¢Œìš° ë°˜ì „ - ëˆˆë¹› ì‹¬ë¦¬ì „ì„ ìœ„í•´ */
+  transform: scaleX(-1);
 }
 
 .player-video-container .video-placeholder {
@@ -388,7 +477,7 @@
 }
 
 /* ------------------------------------------- */
-/* 내 카드 영역 (pos-8) - 컴팩트 */
+/* Ã«â€šÂ´ Ã¬Â¹Â´Ã«â€œÅ“ Ã¬ËœÂÃ¬â€”Â­ (pos-8) - Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸ */
 /* ------------------------------------------- */
 
 .my-cell {
@@ -464,7 +553,7 @@
 }
 
 /* ------------------------------------------- */
-/* 빈 셀 */
+/* Ã«Â¹Ë† Ã¬â€¦â‚¬ */
 /* ------------------------------------------- */
 
 .empty-cell {
@@ -481,7 +570,7 @@
   color: var(--color-text-muted);
 }
 
-/* Turn Overlay - 컴팩트 */
+/* Turn Overlay - Ã¬Â»Â´Ã­Å’Â©Ã­Å Â¸ */
 .turn-overlay {
   position: absolute;
   top: 8px;
@@ -532,7 +621,7 @@
   .pos-8 {
     grid-area: 3 / 1 / 4 / 4;
   }
-  /* 뽑는 사람 라벨 (내가 타겟일 때) */
+  /* Ã«Â½â€˜Ã«Å â€ Ã¬â€šÂ¬Ã«Å¾Å’ Ã«ÂÂ¼Ã«Â²Â¨ (Ã«â€šÂ´ÃªÂ°â‚¬ Ã­Æ’â‚¬ÃªÂ²Å¸Ã¬ÂÂ¼ Ã«â€¢Å’) */
 .drawer-label {
   position: absolute;
   bottom: 0;
@@ -556,7 +645,7 @@
   margin-left: 4px;
 }
 
-/* 조커 알림 - 인라인 (카드 위) */
+/* Ã¬Â¡Â°Ã¬Â»Â¤ Ã¬â€¢Å’Ã«Â¦Â¼ - Ã¬ÂÂ¸Ã«ÂÂ¼Ã¬ÂÂ¸ (Ã¬Â¹Â´Ã«â€œÅ“ Ã¬Å“â€ž) */
 .joker-alert-inline {
   position: absolute;
   bottom: 130px;
@@ -583,7 +672,7 @@
   color: var(--color-red);
 }
 
-/* 전환 중인 빈 셀 */
+/* Ã¬Â â€žÃ­â„¢Ëœ Ã¬Â¤â€˜Ã¬ÂÂ¸ Ã«Â¹Ë† Ã¬â€¦â‚¬ */
 .empty-cell.transitioning {
   background: rgba(212, 175, 55, 0.05);
   border-color: rgba(212, 175, 55, 0.2);
@@ -594,7 +683,7 @@
   font-size: 24px;
 }
 
-/* 내가 타겟일 때 힌트 */
+/* Ã«â€šÂ´ÃªÂ°â‚¬ Ã­Æ’â‚¬ÃªÂ²Å¸Ã¬ÂÂ¼ Ã«â€¢Å’ Ã­Å¾Å’Ã­Å Â¸ */
 .my-cards-hint {
   font-size: 12px;
   color: var(--color-gold);
@@ -602,7 +691,7 @@
   padding: 8px;
 }
 
-/* 카드 수 텍스트 */
+/* Ã¬Â¹Â´Ã«â€œÅ“ Ã¬Ë†Ëœ Ã­â€¦ÂÃ¬Å Â¤Ã­Å Â¸ */
 .card-count-text {
   font-size: 12px;
   color: var(--color-gold);

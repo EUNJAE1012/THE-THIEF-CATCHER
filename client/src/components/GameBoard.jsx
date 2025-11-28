@@ -21,9 +21,9 @@ const GameBoard = () => {
   const [localHoverIndex, setLocalHoverIndex] = useState(null); 
   const [jokerPulled, setJokerPulled] = useState(false); 
   const [cardShuffleKey, setCardShuffleKey] = useState(0);
-  const [stageTransition, setStageTransition] = useState(null); // 스테이지 전환 애니메이션
+  const [stageTransition, setStageTransition] = useState(null); 
   const targetVideoRef = useRef(null);
-  const drawerVideoRef = useRef(null); // 뽑는 사람 비디오
+  const drawerVideoRef = useRef(null); 
 
   if (!gameState) return null;
 
@@ -32,10 +32,9 @@ const GameBoard = () => {
   const targetPlayer = players.find(p => p.id === nextTargetId);
   const currentTurnPlayer = players.find(p => p.id === currentTurnId);
   
-  // 내가 타겟인지 (다른 사람이 내 카드를 뽑는 상황)
+
   const amITarget = nextTargetId === player?.id;
 
-  // 스테이지 전환 애니메이션 트리거
   useEffect(() => {
     if (targetPlayer) {
       setStageTransition('entering');
@@ -44,27 +43,6 @@ const GameBoard = () => {
     }
   }, [nextTargetId]);
 
-  // VVV 이 두 useEffect 훅을 제거하거나 주석 처리하여, 아래 renderGridCell의 ref callback으로 대체합니다.
-  /*
-  // 타겟 플레이어 비디오 스트림 연결 (삭제 또는 주석 처리)
-  useEffect(() => {
-    const videoEl = targetVideoRef.current;
-    if (videoEl && targetPlayer && !amITarget && remoteStreams[targetPlayer.id]) {
-      videoEl.srcObject = remoteStreams[targetPlayer.id];
-    }
-  }, [targetPlayer, remoteStreams, amITarget]);
-
-  // 뽑는 사람(drawer) 비디오 스트림 연결 (내가 타겟일 때) (삭제 또는 주석 처리)
-  useEffect(() => {
-    const videoEl = drawerVideoRef.current;
-    if (videoEl && currentTurnPlayer && amITarget && remoteStreams[currentTurnPlayer.id]) {
-      videoEl.srcObject = remoteStreams[currentTurnPlayer.id];
-    }
-  }, [currentTurnPlayer, remoteStreams, amITarget]);
-  */
-  // ^^^ 이 두 useEffect 훅을 제거하거나 주석 처리하여, 아래 renderGridCell의 ref callback으로 대체합니다.
-
-  // 플레이어별 위치 계산
   const playerPositions = useMemo(() => {
     const positions = [1, 2, 3, 4, 6, 7, 9]; 
     const activePlayers = players.filter(p => !p.isEliminated);
@@ -84,7 +62,6 @@ const GameBoard = () => {
     return map;
   }, [players, player?.id]);
 
-  // 카드 뽑기
   const handleDrawCard = async (cardIndex) => {
     if (!isMyTurn || !targetPlayer || isDrawing) return;
     setIsDrawing(true);
@@ -108,7 +85,7 @@ const GameBoard = () => {
       }
       
     } catch (error) {
-      console.error('카드 뽑기 실패:', error);
+      console.error('ì¹´ë“œ ë½‘ê¸° ì‹¤íŒ¨:', error);
     } finally {
       setDrawAnimation(null); 
       setDrawnCardData(null); 
@@ -119,7 +96,6 @@ const GameBoard = () => {
   const renderGridCell = (position) => {
     const cellPlayer = playerPositions[position];
 
-    // Position 5: 중앙 스테이지
     if (position === 5) {
       const canInteract = isMyTurn && !isDrawing;
       const centerCards = amITarget ? myCards : null;
@@ -137,20 +113,19 @@ const GameBoard = () => {
                 exit={{ opacity: 0, scale: 0.8, y: amITarget ? 100 : 0 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               >
-                {/* 비디오 컨테이너 */}
                 <div className="target-video-container">
                   {amITarget ? (
-                    // 내가 타겟일 때 - 뽑는 사람 얼굴 표시 (Drawer's video)
+                    // (Drawer's video)
                     <>
                       <video
-                        // Ref Callback으로 변경 (drawerVideoRef 유지)
+                        // Ref Callback
                         ref={(el) => {
-                          drawerVideoRef.current = el; // useRef 업데이트
+                          drawerVideoRef.current = el; 
                           const stream = currentTurnPlayer ? remoteStreams[currentTurnPlayer.id] : null;
                           if (el && stream && el.srcObject !== stream) {
                             el.srcObject = stream;
                           } else if (el && !stream && el.srcObject) {
-                            el.srcObject = null; // 스트림이 없으면 해제
+                            el.srcObject = null; 
                           }
                         }}
                         autoPlay
@@ -164,21 +139,21 @@ const GameBoard = () => {
                       )}
                       <div className="drawer-label">
                         <span className="drawer-name">{currentTurnPlayer?.nickname}</span>
-                        <span className="drawer-action">이(가) 선택 중...</span>
+                        <span className="drawer-action">ì´(ê°€) ì„ íƒ ì¤‘...</span>
                       </div>
                     </>
                   ) : (
-                    // 내가 뽑는 사람일 때 - Target's video
+                    // Target's video
                     <>
                       <video
-                        // Ref Callback으로 변경 (targetVideoRef 유지)
+
                         ref={(el) => {
-                          targetVideoRef.current = el; // useRef 업데이트
+                          targetVideoRef.current = el; 
                           const stream = targetPlayer ? remoteStreams[targetPlayer.id] : null;
                           if (el && stream && el.srcObject !== stream) {
                             el.srcObject = stream;
                           } else if (el && !stream && el.srcObject) {
-                            el.srcObject = null; // 스트림이 없으면 해제
+                            el.srcObject = null;
                           }
                         }}
                         autoPlay
@@ -197,7 +172,6 @@ const GameBoard = () => {
                   )}
                 </div>
 
-                {/* 카드 오버레이 - 캠 위에 */}
                 <motion.div 
                   key={cardShuffleKey} 
                   className="target-cards-overlay-container"
@@ -292,7 +266,6 @@ const GameBoard = () => {
                   })()}
                 </motion.div>
 
-                {/* 조커 알림 - 카드 위에 표시 */}
                 <AnimatePresence>
                   {jokerPulled && (
                     <motion.div
@@ -303,15 +276,15 @@ const GameBoard = () => {
                       transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                     >
                       <span className="joker-icon-inline">🃏</span>
-                      <span className="joker-text-inline">조커!</span>
+                      <span className="joker-text-inline">조커 뽑았다!</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
             
-                {/* 힌트 */}
+                {/* ížŒíŠ¸ */}
                 {isMyTurn && !amITarget && (
                   <div className="center-hint-area">
-                    <p className="draw-hint">선택하세요</p>
+                    <p className="draw-hint">카드를 클릭하여 뽑으세요</p>
                   </div>
                 )}
               </motion.div>
@@ -324,7 +297,7 @@ const GameBoard = () => {
                 exit={{ opacity: 0 }}
               >
                 <span className="turn-indicator">
-                  {isMyTurn ? '내 차례' : currentTurnPlayer?.nickname}
+                  {isMyTurn ? 'ë‚´ ì°¨ë¡€' : currentTurnPlayer?.nickname}
                 </span>
               </motion.div>
             )}
@@ -333,7 +306,7 @@ const GameBoard = () => {
       );
     }
 
-    // 나머지 셀들...
+    // ë‚˜ë¨¸ì§€ ì…€ë“¤...
     if (cellPlayer) {
       if (cellPlayer.id === nextTargetId && position !== 8) { 
         return (
@@ -357,7 +330,7 @@ const GameBoard = () => {
           return (
             <div className={`grid-cell my-cell pos-${position} is-target`}>
               <div className="player-info-container">
-                <span className="player-nickname">{cellPlayer.nickname} (나)</span>
+                <span className="player-nickname">{cellPlayer.nickname} (Me)</span>
               </div>
               <motion.div 
                 className="my-cards-hint"
@@ -373,7 +346,7 @@ const GameBoard = () => {
         return (
           <div className={`grid-cell my-cell pos-${position}`}>
             <div className="player-info-container">
-              <span className="player-nickname">{cellPlayer.nickname} (나)</span>
+              <span className="player-nickname">{cellPlayer.nickname} (Me)</span>
             </div>
             <div className="my-cards-container">
               {cardCount > 0 ? (
@@ -390,7 +363,7 @@ const GameBoard = () => {
                   </motion.div>
                 ))
               ) : (
-                <div className="eliminated-badge">🎉 승리</div>
+                <div className="eliminated-badge">🎉 승리!</div>
               )}
             </div>
             {cellPlayer.id === currentTurnId && (
@@ -445,7 +418,7 @@ const GameBoard = () => {
     return (
       <div className="grid-cell empty-cell">
         <div className="empty-slot">
-          <span className="empty-icon">♦</span>
+          <span className="empty-icon">텅</span>
         </div>
       </div>
     );
@@ -474,17 +447,53 @@ const GameBoard = () => {
         )}
       </AnimatePresence>
 
+
       <AnimatePresence>
         {jokerPulled && (
           <motion.div
-            className="joker-alert"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [0, 1.1, 1], opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            className="joker-alert-fullscreen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <span className="joker-icon">🃏</span>
-            <span className="joker-text">조커!</span>
+            <div className="joker-icons-container">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="joker-icon-huge"
+                  initial={{ scale: 0, rotate: -180, y: 100 }}
+                  animate={{ 
+                    scale: [0, 1.3, 1], 
+                    rotate: [i === 1 ? 0 : (i === 0 ? -15 : 15), i === 1 ? 0 : (i === 0 ? -10 : 10)],
+                    y: 0 
+                  }}
+                  transition={{ 
+                    delay: i * 0.1, 
+                    type: 'spring', 
+                    stiffness: 300, 
+                    damping: 12 
+                  }}
+                >
+                  🃏
+                </motion.div>
+              ))}
+            </div>
+            <motion.div 
+              className="joker-text-huge"
+              initial={{ scale: 0, y: 50 }}
+              animate={{ scale: [0, 1.2, 1], y: 0 }}
+              transition={{ delay: 0.3, type: 'spring', stiffness: 400, damping: 15 }}
+            >
+              조커!
+            </motion.div>
+            <motion.div 
+              className="joker-subtext"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              조커 카드를 뽑았습니다!
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

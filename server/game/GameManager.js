@@ -217,7 +217,13 @@ class GameManager {
 
     // 카드 뽑기
     const drawnCard = target.cards.splice(cardIndex, 1)[0];
-    drawer.cards.push(drawnCard);
+    
+    // 무작위 위치에 카드 삽입 
+    const randomInsertIndex = Math.floor(Math.random() * (drawer.cards.length + 1));
+    drawer.cards.splice(randomInsertIndex, 0, drawnCard);
+    
+    // 뽑은 사람의 카드 섞기 (순서 고정 방지)
+    this.shuffleArray(drawer.cards)
 
     // 매칭 카드 확인 및 제거
     const matchedCards = [];

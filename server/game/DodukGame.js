@@ -78,6 +78,12 @@ initialize() {
       [deck[i], deck[j]] = [deck[j], deck[i]];
     }
   }
+  shuffleCards(cards) {
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+  }
 
   distributeCards(deck) {
     let playerIndex = 0;
@@ -153,7 +159,13 @@ initialize() {
 
     // 카드 뽑기
     const drawnCard = target.cards.splice(cardIndex, 1)[0];
-    drawer.cards.push(drawnCard);
+    
+    // 무작위 위치에 카드 삽입
+    const randomInsertIndex = Math.floor(Math.random() * (drawer.cards.length + 1));
+    drawer.cards.splice(randomInsertIndex, 0, drawnCard);
+    
+    // 카드 섞기
+    this.shuffleCards(drawer.cards);
 
     // 짝 제거 - 뽑은 사람(drawer) 체크
     const drawerMatchedCards = this.removePairs(drawer);

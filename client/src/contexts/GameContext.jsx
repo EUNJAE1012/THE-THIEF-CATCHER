@@ -10,7 +10,8 @@ const initialState = {
   isInGame: false,
   chatMessages: [],
   error: null,
-  hoverState: null,  
+  hoverState: null,
+  showGameOver: false,
 };
 
 function gameReducer(state, action) {
@@ -25,7 +26,7 @@ function gameReducer(state, action) {
       return { ...state, room: action.payload };
     
     case 'SET_GAME_STATE':
-      return { ...state, gameState: action.payload, isInGame: true };
+      return { ...state, gameState: action.payload, isInGame: true, showGameOver: false };
     
     case 'UPDATE_GAME_STATE':
       return { ...state, gameState: action.payload };
@@ -38,10 +39,14 @@ function gameReducer(state, action) {
           gameOver: true, 
           loser: action.payload.loser, 
           winners: action.payload.winners 
-        } 
+        },
+        showGameOver: true
       };
     
-    // 호버 상태 
+    case 'HIDE_GAME_OVER':
+      return { ...state, showGameOver: false };
+    
+    // Ã­ËœÂ¸Ã«Â²â€ž Ã¬Æ’ÂÃ­Æ’Å“ 
     case 'SET_HOVER':
       return { ...state, hoverState: action.payload };
     
@@ -66,13 +71,13 @@ function gameReducer(state, action) {
         gameState: null, 
         isInGame: false,
         hoverState: null,
-        error: null
+        error: null,
+        showGameOver: false
       };
     
     case 'LEAVE_ROOM':
       return { 
         ...initialState,
-        player: state.player ? { ...state.player, isHost: false, isReady: false } : null
       };
     
     default:
@@ -98,7 +103,7 @@ export const GameProvider = ({ children }) => {
     // Room updates
     socket.on('room-updated', ({ room }) => {
       dispatch({ type: 'UPDATE_ROOM', payload: room });
-      // 플레이어 정보도 업데이트 (ready 상태 동기화)
+      // Ã­â€Å’Ã«Â Ë†Ã¬ÂÂ´Ã¬â€“Â´ Ã¬Â â€¢Ã«Â³Â´Ã«Ââ€ž Ã¬â€”â€¦Ã«ÂÂ°Ã¬ÂÂ´Ã­Å Â¸ (ready Ã¬Æ’ÂÃ­Æ’Å“ Ã«Ââ„¢ÃªÂ¸Â°Ã­â„¢â€)
       const updatedPlayer = room.players.find(p => p.id === socket.id);
       if (updatedPlayer) {
         dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
@@ -111,7 +116,7 @@ export const GameProvider = ({ children }) => {
 
     socket.on('player-left', ({ playerId, room, newHost }) => {
       dispatch({ type: 'UPDATE_ROOM', payload: room });
-      // 본인이 새 방장이 되었는지 확인
+      // Ã«Â³Â¸Ã¬ÂÂ¸Ã¬ÂÂ´ Ã¬Æ’Ë† Ã«Â°Â©Ã¬Å¾Â¥Ã¬ÂÂ´ Ã«ÂËœÃ¬â€”Ë†Ã«Å â€Ã¬Â§â‚¬ Ã­â„¢â€¢Ã¬ÂÂ¸
       if (newHost && newHost.id === socket.id) {
         dispatch({ type: 'SET_PLAYER', payload: newHost });
       }
@@ -124,9 +129,10 @@ export const GameProvider = ({ children }) => {
 
     socket.on('card-drawn', ({ gameState }) => {
       dispatch({ type: 'UPDATE_GAME_STATE', payload: gameState });
+      dispatch({ type: 'CLEAR_HOVER' }); // í„´ ë³€ê²½ ì‹œ í˜¸ë²„ ìƒíƒœ ì´ˆê¸°í™”
     });
 
-    // 카드 셔플 이벤트
+    // Ã¬Â¹Â´Ã«â€œÅ“ Ã¬â€¦â€Ã­â€Å’ Ã¬ÂÂ´Ã«Â²Â¤Ã­Å Â¸
     socket.on('cards-shuffled', ({ gameState }) => {
       dispatch({ type: 'UPDATE_GAME_STATE', payload: gameState });
     });
@@ -138,25 +144,21 @@ export const GameProvider = ({ children }) => {
       });
     });
 
-    // return-to-lobby 이벤트 핸들러 수정
+    // return-to-lobby 이벤트 핸들러
     socket.on('return-to-lobby', ({ room }) => {
       console.log('Returning to lobby', room);
       
-      // 게임 상태 완전 초기화
+      // 게임 상태 초기화 및 방 정보 업데이트를 한번에 처리
       dispatch({ type: 'RESET_GAME' });
+      dispatch({ type: 'UPDATE_ROOM', payload: room });
       
-      // 약간의 딜레이 후 방 정보 업데이트 (상태 충돌 방지)
-      setTimeout(() => {
-        dispatch({ type: 'UPDATE_ROOM', payload: room });
-        
-        const updatedPlayer = room.players.find(p => p.id === socket.id);
-        if (updatedPlayer) {
-          dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
-        }
-      }, 100);
+      const updatedPlayer = room.players.find(p => p.id === socket.id);
+      if (updatedPlayer) {
+        dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
+      }
     });
 
-    // 호버 이벤트 추가
+    // Ã­ËœÂ¸Ã«Â²â€ž Ã¬ÂÂ´Ã«Â²Â¤Ã­Å Â¸ Ã¬Â¶â€ÃªÂ°â‚¬
     socket.on('card-hover', ({ hoverPlayerId, targetPlayerId, cardIndex }) => {
       dispatch({ 
         type: 'SET_HOVER', 
@@ -173,6 +175,17 @@ export const GameProvider = ({ children }) => {
       dispatch({ type: 'ADD_CHAT_MESSAGE', payload: message });
     });
 
+    // Nickname changed
+    socket.on('nickname-changed', ({ playerId, newNickname, room }) => {
+      dispatch({ type: 'UPDATE_ROOM', payload: room });
+      if (playerId === socket.id) {
+        const updatedPlayer = room.players.find(p => p.id === socket.id);
+        if (updatedPlayer) {
+          dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
+        }
+      }
+    });
+
     return () => {
       socket.off('room-updated');
       socket.off('player-joined');
@@ -185,6 +198,7 @@ export const GameProvider = ({ children }) => {
       socket.off('chat-message');
       socket.off('card-hover');  
       socket.off('card-hover-end');
+      socket.off('nickname-changed');
     };
   }, [socket]);
 
@@ -217,6 +231,13 @@ export const GameProvider = ({ children }) => {
         }
       });
     });
+  };
+
+  const leaveRoom = () => {
+    if (socket && state.room) {
+      socket.emit('leave-room');
+    }
+    dispatch({ type: 'LEAVE_ROOM' });
   };
 
   const toggleReady = () => {
@@ -269,6 +290,37 @@ export const GameProvider = ({ children }) => {
     });
   };
 
+  const changeNickname = (newNickname) => {
+    return new Promise((resolve, reject) => {
+      socket.emit('change-nickname', { newNickname }, (response) => {
+        if (response.success) {
+          resolve(response);
+        } else {
+          dispatch({ type: 'SET_ERROR', payload: response.error });
+          reject(response.error);
+        }
+      });
+    });
+  };
+
+  const playAgain = () => {
+    // 즉시 게임 오버 상태와 게임 상태 초기화
+    dispatch({ type: 'RESET_GAME' });
+    
+    socket.emit('request-play-again', (response) => {
+      if (response.success) {
+        // 서버에서 받은 방 정보로 업데이트
+        dispatch({ type: 'UPDATE_ROOM', payload: response.room });
+        const updatedPlayer = response.room.players.find(p => p.id === socket.id);
+        if (updatedPlayer) {
+          dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
+        }
+      } else {
+        dispatch({ type: 'SET_ERROR', payload: response.error || '다시 시작에 실패했습니다.' });
+      }
+    });
+  };
+
   const sendChatMessage = (message) => {
     socket.emit('chat-message', { message });
   };
@@ -290,10 +342,13 @@ export const GameProvider = ({ children }) => {
     isConnected,
     createRoom,
     joinRoom,
+    leaveRoom,
     toggleReady,
     startGame,
     drawCard,
     shuffleTargetCards,
+    changeNickname,
+    playAgain,
     sendChatMessage,
     sendCardHover,
     sendCardHoverEnd,

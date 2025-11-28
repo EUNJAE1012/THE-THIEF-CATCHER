@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import './Lobby.css';
 
 const Lobby = () => {
-  const { room, player, toggleReady, startGame, error, clearError } = useGame();
+  const navigate = useNavigate();
+  const { room, player, toggleReady, startGame, leaveRoom, changeNickname, error, clearError } = useGame();
   const [isStarting, setIsStarting] = useState(false);
   const [isTogglingReady, setIsTogglingReady] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
 
   const handleToggleReady = async () => {
     if (isTogglingReady) return;
@@ -31,6 +35,37 @@ const Lobby = () => {
       setLocalError(err || '게임 시작에 실패했습니다.');
     } finally {
       setIsStarting(false);
+    }
+  };
+
+  const handleLeaveRoom = () => {
+    leaveRoom();
+    navigate('/');
+  };
+
+  const handleNicknameEdit = () => {
+    setNewNickname(player?.nickname || '');
+    setIsEditingNickname(true);
+  };
+
+  const handleNicknameSubmit = async () => {
+    if (!newNickname.trim() || newNickname.trim() === player?.nickname) {
+      setIsEditingNickname(false);
+      return;
+    }
+    try {
+      await changeNickname(newNickname.trim());
+      setIsEditingNickname(false);
+    } catch (err) {
+      setLocalError(err || '닉네임 변경에 실패했습니다.');
+    }
+  };
+
+  const handleNicknameKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleNicknameSubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditingNickname(false);
     }
   };
 
@@ -65,10 +100,29 @@ const Lobby = () => {
                   {p.nickname.charAt(0)}
                 </div>
                 <div className="player-details">
-                  <span className="player-nickname">
-                    {p.nickname}
-                    {p.id === player?.id && ' (나)'}
-                  </span>
+                  {p.id === player?.id && isEditingNickname ? (
+                    <div className="nickname-edit">
+                      <input
+                        type="text"
+                        value={newNickname}
+                        onChange={(e) => setNewNickname(e.target.value)}
+                        onKeyDown={handleNicknameKeyDown}
+                        onBlur={handleNicknameSubmit}
+                        maxLength={12}
+                        autoFocus
+                        className="nickname-input"
+                      />
+                    </div>
+                  ) : (
+                    <span 
+                      className={`player-nickname ${p.id === player?.id ? 'editable' : ''}`}
+                      onClick={p.id === player?.id ? handleNicknameEdit : undefined}
+                    >
+                      {p.nickname}
+                      {p.id === player?.id && ' (나)'}
+                      {p.id === player?.id && <span className="edit-icon">✏️</span>}
+                    </span>
+                  )}
                   <div className="player-badges">
                     {p.isHost && <span className="badge host">방장</span>}
                     {!p.isHost && (
@@ -79,7 +133,7 @@ const Lobby = () => {
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', stiffness: 500 }}
                       >
-                        {p.isReady ? '✓ 준비 완료' : '대기 중'}
+                        {p.isReady ? '✔ 준비 완료' : '대기 중'}
                       </motion.span>
                     )}
                   </div>
@@ -87,7 +141,7 @@ const Lobby = () => {
                 {/* 준비 상태 인디케이터 */}
                 {!p.isHost && (
                   <div className={`ready-indicator ${p.isReady ? 'ready' : ''}`}>
-                    {p.isReady ? '✓' : '○'}
+                    {p.isReady ? '✔' : '○'}
                   </div>
                 )}
               </motion.div>
@@ -105,17 +159,6 @@ const Lobby = () => {
           </div>
         </div>
 
-        {/* Game Rules */}
-        <div className="game-rules">
-          <h3>게임 규칙</h3>
-          <ul>
-            <li>53장의 카드(조커 포함)를 모든 플레이어에게 분배합니다.</li>
-            <li>같은 숫자의 카드가 2장 또는 4장이면 버립니다.</li>
-            <li>차례대로 옆 사람의 카드를 한 장씩 뽑습니다.</li>
-            <li>모든 카드를 버리면 승리! 조커를 끝까지 가진 사람이 도둑입니다.</li>
-          </ul>
-        </div>
-
         {/* Error Message */}
         <AnimatePresence>
           {(localError || error) && (
@@ -130,7 +173,7 @@ const Lobby = () => {
           )}
         </AnimatePresence>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - 상단으로 이동 */}
         <div className="lobby-actions">
           {player?.isHost ? (
             <motion.button
@@ -162,7 +205,7 @@ const Lobby = () => {
                   transition={{ duration: 0.2 }}
                 >
                   {isTogglingReady ? '처리 중...' :
-                   isReady ? '❌ 준비 취소' : '✓ 준비 완료'}
+                   isReady ? '❌ 준비 취소' : '✔ 준비 완료'}
                 </motion.span>
               </AnimatePresence>
             </motion.button>
@@ -181,7 +224,7 @@ const Lobby = () => {
           )}
         </div>
 
-        {/* Share Link */}
+        {/* Share Link - 상단으로 이동 */}
         <div className="share-section">
           <p>친구를 초대하세요!</p>
           <div className="share-link">
@@ -196,6 +239,24 @@ const Lobby = () => {
               복사
             </button>
           </div>
+        </div>
+
+        {/* Exit Button */}
+        <div className="exit-section">
+          <button className="exit-button" onClick={handleLeaveRoom}>
+            🚪 나가기
+          </button>
+        </div>
+
+        {/* Game Rules - 하단으로 이동 */}
+        <div className="game-rules">
+          <h3>게임 규칙</h3>
+          <ul>
+            <li>53장의 카드(조커 포함)를 모든 플레이어에게 분배합니다.</li>
+            <li>같은 숫자의 카드가 2장 또는 4장이면 버립니다.</li>
+            <li>차례대로 옆 사람의 카드를 한 장씩 뽑습니다.</li>
+            <li>모든 카드를 버리면 승리! 조커를 끝까지 가진 사람이 도둑입니다.</li>
+          </ul>
         </div>
       </div>
     </div>

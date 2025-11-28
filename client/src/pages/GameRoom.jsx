@@ -14,7 +14,7 @@ const GameRoom = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   const { socket, isConnected } = useSocket();
-  const { room, player, gameState, isInGame, joinRoom, error } = useGame();
+  const { room, player, gameState, isInGame, joinRoom, error, showGameOver } = useGame();
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
 
@@ -68,7 +68,7 @@ const GameRoom = () => {
     );
   }
 
-  const isGameOver = gameState?.gameOver && gameState?.loser;
+  const isGameOver = showGameOver && gameState?.gameOver && gameState?.loser;
 
   return (
     <div className="game-room">

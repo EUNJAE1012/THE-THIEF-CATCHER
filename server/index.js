@@ -120,6 +120,63 @@ io.on('connection', (socket) => {
     });
   });
 
+  // 방 나가기 (명시적)
+  socket.on('leave-room', () => {
+    const { roomCode, playerId } = socket;
+    if (roomCode && playerId) {
+      const result = gameManager.removePlayer(roomCode, playerId);
+      socket.leave(roomCode);
+      socket.roomCode = null;
+      socket.playerId = null;
+      
+      if (result.roomDeleted) {
+        console.log(`Room ${roomCode} deleted`);
+      } else if (result.room) {
+        io.to(roomCode).emit('player-left', { 
+          playerId, 
+          room: result.room,
+          newHost: result.newHost
+        });
+      }
+    }
+  });
+
+  // 닉네임 변경
+  socket.on('change-nickname', ({ newNickname }, callback) => {
+    const { roomCode, playerId } = socket;
+    if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
+
+    const room = gameManager.getRoom(roomCode);
+    if (!room) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
+
+    // 게임 중에는 닉네임 변경 불가
+    if (room.status === 'playing') {
+      return callback({ success: false, error: '게임 중에는 닉네임을 변경할 수 없습니다.' });
+    }
+
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return callback({ success: false, error: '플레이어를 찾을 수 없습니다.' });
+
+    // 닉네임 유효성 검사
+    if (!newNickname || newNickname.trim().length === 0) {
+      return callback({ success: false, error: '닉네임을 입력해주세요.' });
+    }
+    if (newNickname.trim().length > 12) {
+      return callback({ success: false, error: '닉네임은 12자 이하로 입력해주세요.' });
+    }
+
+    player.nickname = newNickname.trim();
+    
+    callback({ success: true, player });
+
+    // 모든 플레이어에게 알림
+    io.to(roomCode).emit('nickname-changed', {
+      playerId,
+      newNickname: player.nickname,
+      room: gameManager.getRoom(roomCode)
+    });
+  });
+
   // 준비 상태 토글
   socket.on('toggle-ready', (callback) => {
     const { roomCode, playerId } = socket;
@@ -197,14 +254,30 @@ io.on('connection', (socket) => {
       });
 
       // 게임 종료 체크
-      // game-over 후 return-to-lobby 부분
-if (result.gameOver) {
-  io.to(roomCode).emit('game-over', {
-    loser: result.loser,
-    winners: result.winners
+      if (result.gameOver) {
+        io.to(roomCode).emit('game-over', {
+          loser: result.loser,
+          winners: result.winners
+        });
+        
+        // 자동으로 로비 복귀하지 않음 - 클라이언트에서 버튼으로 제어
+      }
+
+      callback({ success: true, result });
+    } else {
+      callback({ success: false, error: result.error });
+    }
   });
-  
-  setTimeout(() => {
+
+  // 한번 더 하기 요청
+  socket.on('request-play-again', (callback) => {
+    const { roomCode, playerId } = socket;
+    if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
+
+    const room = gameManager.getRoom(roomCode);
+    if (!room) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
+
+    // 게임 리셋
     const updatedRoom = gameManager.resetGame(roomCode);
     
     if (updatedRoom) {
@@ -218,16 +291,15 @@ if (result.gameOver) {
       updatedRoom.currentTurnId = null;
       updatedRoom.nextTargetId = null;
       
+      // 요청한 플레이어에게 응답
+      callback({ success: true, room: updatedRoom });
+      
+      // 모든 플레이어에게 로비 복귀 알림
       io.to(roomCode).emit('return-to-lobby', {
         room: updatedRoom
       });
-    }
-  }, 8000);
-}
-
-      callback({ success: true, result });
     } else {
-      callback({ success: false, error: result.error });
+      callback({ success: false, error: '게임 리셋에 실패했습니다.' });
     }
   });
 

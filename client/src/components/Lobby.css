@@ -34,7 +34,7 @@
 
 /* Player List */
 .player-list {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .player-list h3 {
@@ -106,6 +106,48 @@
   text-overflow: ellipsis;
 }
 
+.player-nickname.editable {
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.player-nickname.editable:hover {
+  color: var(--color-gold);
+}
+
+.player-nickname .edit-icon {
+  font-size: 12px;
+  margin-left: 4px;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.player-nickname.editable:hover .edit-icon {
+  opacity: 1;
+}
+
+/* Nickname Edit */
+.nickname-edit {
+  display: flex;
+  align-items: center;
+}
+
+.nickname-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-bg-darkest);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nickname-input:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
 .player-badges {
   display: flex;
   gap: var(--spacing-xs);
@@ -159,43 +201,6 @@
   background: var(--color-green);
   color: white;
   box-shadow: 0 0 10px rgba(45, 139, 78, 0.5);
-}
-
-/* Game Rules */
-.game-rules {
-  padding: var(--spacing-lg);
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-xl);
-}
-
-.game-rules h3 {
-  font-size: 14px;
-  color: var(--color-gold);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: var(--spacing-md);
-}
-
-.game-rules ul {
-  list-style: none;
-}
-
-.game-rules li {
-  position: relative;
-  padding-left: var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
-.game-rules li::before {
-  content: '♦';
-  position: absolute;
-  left: 0;
-  color: var(--color-red);
 }
 
 /* Error */
@@ -269,7 +274,7 @@
 /* Ready Status Summary */
 .ready-status-summary {
   text-align: center;
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .ready-count {
@@ -290,12 +295,18 @@
 /* Share Section */
 .share-section {
   text-align: center;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: var(--radius-md);
 }
 
 .share-section p {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--color-gold);
   margin-bottom: var(--spacing-sm);
+  font-weight: 600;
 }
 
 .share-link {
@@ -317,16 +328,77 @@
 
 .share-link button {
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-bg-elevated);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-gold);
+  border: none;
   border-radius: var(--radius-sm);
-  color: var(--color-text-primary);
+  color: var(--color-bg-darkest);
   font-size: 14px;
+  font-weight: 600;
   transition: all var(--transition-fast);
 }
 
 .share-link button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-gold-light);
+}
+
+/* Exit Section */
+.exit-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.exit-button {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  font-size: 16px;
+  font-weight: 600;
+  background: transparent;
+  border: 2px solid var(--color-red);
+  color: var(--color-red);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.exit-button:hover {
+  background: var(--color-red);
+  color: white;
+}
+
+/* Game Rules - 하단 배치 */
+.game-rules {
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  margin-top: auto;
+}
+
+.game-rules h3 {
+  font-size: 14px;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--spacing-md);
+}
+
+.game-rules ul {
+  list-style: none;
+}
+
+.game-rules li {
+  position: relative;
+  padding-left: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.game-rules li::before {
+  content: '♦';
+  position: absolute;
+  left: 0;
+  color: var(--color-red);
 }
 
 /* Responsive */
