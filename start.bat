@@ -1,11 +1,11 @@
 @echo off
 
-echo --- CLIENT 빌드 ---
+echo === Building Client ===
 cd client
-npm run build
+call npm run build
 
-echo --- SERVER 실행 ---
+echo === Starting Server ===
 cd ../server
-npm run server
+call npm run server
 
 pause
