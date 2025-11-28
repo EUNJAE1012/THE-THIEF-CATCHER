@@ -18,8 +18,15 @@ const server = https.createServer(options, app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: [
+      'http://localhost:5173',      // Vite dev server
+      'https://localhost:3001',     // Local HTTPS
+      'http://localhost',           // Local HTTP fallback
+      'https://www.jomha.site',     // Production with www
+      'https://jomha.site',         // Production without www
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 

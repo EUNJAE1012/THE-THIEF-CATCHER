@@ -6,5 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0'
+  },
+  define: {
+    __VITE_SOCKET_URL__: JSON.stringify(process.env.VITE_SOCKET_URL || '')
   }
 })

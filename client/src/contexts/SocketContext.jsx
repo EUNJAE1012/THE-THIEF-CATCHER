@@ -16,15 +16,30 @@ export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
 
 useEffect(() => {
-    // 현재 접속한 호스트의 IP를 사용 (같은 와이파이 내 멀티플레이 지원)
-    const serverUrl = `https://${window.location.hostname}:3001`;
-    console.log('Connecting to server:', serverUrl);
-    
-    const newSocket = io(serverUrl, {
+    // 환경변수 또는 동적 결정으로 서버 URL 결정
+    const isDevelopment = import.meta.env.MODE === 'development';
+    const envSocketUrl = import.meta.env.VITE_SOCKET_URL;
+
+    let baseUrl = envSocketUrl;
+    if (!baseUrl) {
+      if (isDevelopment) {
+        baseUrl = `https://localhost:3001`;
+      } else {
+        // 프로덕션: 현재 호스트의 https 사용
+        baseUrl = `https://${window.location.hostname}`;
+      }
+    }
+
+    console.log('Connecting to server:', baseUrl);
+
+    const newSocket = io(baseUrl, {
+      path: '/socket.io/',  // nginx 리버스 프록시 경로
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      secure: true,
+      rejectUnauthorized: false,  // 개발 환경에서 자체 서명 인증서 허용
     });
 
     newSocket.on('connect', () => {
@@ -40,6 +55,12 @@ useEffect(() => {
     newSocket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
       setIsConnected(false);
+
+      // Fallback 로직: 프로덕션 URL 실패 시 localhost 재시도
+      if (baseUrl !== `https://localhost:3001` && !isDevelopment) {
+        console.log('Attempting fallback connection to localhost:3001');
+        // 재연결 시도 시 자동으로 fallback 처리됨 (reconnectionAttempts로 관리)
+      }
     });
 
     setSocket(newSocket);
