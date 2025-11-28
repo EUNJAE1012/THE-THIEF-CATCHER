@@ -1,5 +1,7 @@
 // GameManager.js - 도둑잡기 게임 관리자
 
+const statsCollector = require('../monitoring/StatsCollector');
+
 class GameManager {
   constructor(io) {
     this.io = io;
@@ -20,6 +22,7 @@ class GameManager {
       gameState: null
     };
     this.rooms.set(roomCode, room);
+    statsCollector.createRoom();
     return room;
   }
 
@@ -258,7 +261,7 @@ class GameManager {
 
     // 게임 종료 체크
     const activePlayers = room.players.filter(p => !p.isEliminated && p.cards.length > 0);
-    
+
     if (activePlayers.length === 1) {
       // 마지막 남은 플레이어가 패배자 (조커 보유자)
       const loser = activePlayers[0];
@@ -272,6 +275,7 @@ class GameManager {
         });
 
       room.status = 'finished';
+      statsCollector.completeGame();
 
       return {
         success: true,
@@ -369,6 +373,7 @@ class GameManager {
     // 방이 비었으면 삭제
     if (room.players.length === 0) {
       this.rooms.delete(roomCode);
+      statsCollector.closeRoom();
       return { roomDeleted: true, room: null };
     }
 

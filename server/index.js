@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const GameManager = require('./game/GameManager');
+const statsCollector = require('./monitoring/StatsCollector');
 const path = require('path');
 const app = express();
 
@@ -33,10 +34,6 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
-
 
 const gameManager = new GameManager(io);
 
@@ -49,17 +46,36 @@ app.get('/api/room/:roomCode', (req, res) => {
   if (room.players.length >= 6) {
     return res.status(400).json({ error: '방이 가득 찼습니다.' });
   }
-  res.json({ 
-    exists: true, 
+  res.json({
+    exists: true,
     playerCount: room.players.length,
     gameType: room.gameType,
     status: room.status
   });
 });
 
+// Stats API
+app.get('/api/stats', (req, res) => {
+  const stats = statsCollector.getStats();
+  res.json(stats);
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
+  statsCollector.incrementUsers();
 
   // 방 생성
   socket.on('create-room', ({ nickname, gameType = 'doduk' }, callback) => {
@@ -412,6 +428,7 @@ io.on('connection', (socket) => {
         });
       }
     }
+    statsCollector.decrementUsers();
     console.log(`Client disconnected: ${socket.id}`);
   });
 });
