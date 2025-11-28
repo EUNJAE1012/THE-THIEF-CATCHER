@@ -1,21 +1,16 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Root 레벨의 package 파일들 복사
+# package.json 복사 및 의존성 설치
 COPY package*.json ./
+RUN npm install
 
-# 클라이언트 디렉토리 복사
-COPY client ./client
-
-# 서버 디렉토리 복사
+# server 폴더만 복사
 COPY server ./server
 
-# 의존성 설치 및 클라이언트 빌드
-RUN npm install && \
-    cd client && npm install && npm run build && \
-    cd ..
-
+# 포트 노출
 EXPOSE 3001
 
+# 서버 실행
 CMD ["npm", "run", "server"]
