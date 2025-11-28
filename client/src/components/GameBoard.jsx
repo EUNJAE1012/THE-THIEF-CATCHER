@@ -19,6 +19,7 @@ const GameBoard = () => {
   const [drawAnimation, setDrawAnimation] = useState(null);
   const [drawnCardData, setDrawnCardData] = useState(null);
   const [localHoverIndex, setLocalHoverIndex] = useState(null); 
+  const [targetHoverIndex, setTargetHoverIndex] = useState(null); // 뽑히는 사람의 hovering
   const [jokerPulled, setJokerPulled] = useState(false); 
   const [cardShuffleKey, setCardShuffleKey] = useState(0);
   const [stageTransition, setStageTransition] = useState(null); 
@@ -85,7 +86,7 @@ const GameBoard = () => {
       }
       
     } catch (error) {
-      console.error('ì¹´ë“œ ë½‘ê¸° ì‹¤íŒ¨:', error);
+      console.error('카드 뽑기 실패:', error);
     } finally {
       setDrawAnimation(null); 
       setDrawnCardData(null); 
@@ -98,6 +99,7 @@ const GameBoard = () => {
 
     if (position === 5) {
       const canInteract = isMyTurn && !isDrawing;
+      const canHoverAsTarget = amITarget && !isDrawing; // 뽑히는 사람도 hovering 가능
       const centerCards = amITarget ? myCards : null;
       const centerCardCount = amITarget ? myCards.length : (targetPlayer?.cardCount || 0);
       
@@ -139,7 +141,7 @@ const GameBoard = () => {
                       )}
                       <div className="drawer-label">
                         <span className="drawer-name">{currentTurnPlayer?.nickname}</span>
-                        <span className="drawer-action">ì´(ê°€) ì„ íƒ ì¤‘...</span>
+                        <span className="drawer-action">이(가) 선택중...</span>
                       </div>
                     </>
                   ) : (
@@ -192,8 +194,12 @@ const GameBoard = () => {
                       const offsetY = maxOffset * (1 - Math.cos(offsetRatio * Math.PI / 2)); 
                       
                       const isLocalHovering = localHoverIndex === idx;
+                      const isTargetHovering = targetHoverIndex === idx; // 뽑히는 사람의 hovering
+                      
+                      // 다른 사람의 hovering 감지 (뽑는 사람 또는 뽑히는 사람 모두)
                       const isOtherHovering = hoverState && 
                         hoverState.cardIndex === idx &&
+                        hoverState.targetPlayerId === targetPlayer?.id &&
                         hoverState.hoverPlayerId !== player?.id;
                       
                       const isDrawingCard = drawAnimation && 
@@ -203,12 +209,21 @@ const GameBoard = () => {
                       const showFront = amITarget || isDrawnCardVisual;
                       const cardData = amITarget ? centerCards[idx] : (isDrawnCardVisual ? drawnCardData : null);
 
+                      // 뽑히는 사람의 hovering 시 위로 올라가는 효과
+                      let hoverOffsetY = 0;
+                      if (isTargetHovering && canHoverAsTarget) {
+                        hoverOffsetY = -30; // 본인이 hovering - 30px 위로
+                      } else if (isOtherHovering && hoverState.hoverPlayerId === targetPlayer?.id) {
+                        hoverOffsetY = -30; // target이 hovering하는 것을 drawer가 봄 - 30px 위로
+                      }
+
                       return (
                         <motion.div
                           key={`${cardShuffleKey}-${idx}`}
                           className={`target-card-wrapper 
                             ${isOtherHovering ? 'other-hovering' : ''}
                             ${isLocalHovering ? 'local-hovering' : ''}
+                            ${isTargetHovering ? 'target-hovering' : ''}
                           `}
                           initial={{ opacity: 0, y: 50, scale: 0.8 }}
                           animate={isDrawingCard ? {
@@ -218,7 +233,7 @@ const GameBoard = () => {
                             rotate: 0,
                           } : {
                             opacity: 1,
-                            y: offsetY,
+                            y: offsetY + hoverOffsetY,
                             rotate: rotation,
                             scale: 1
                           }}
@@ -235,16 +250,26 @@ const GameBoard = () => {
                             transition: { duration: 0.15 }
                           } : {}} 
                           onClick={canInteract ? () => handleDrawCard(idx) : undefined} 
-                          onMouseEnter={canInteract ? () => {
-                            setLocalHoverIndex(idx);
-                            sendCardHover(idx, targetPlayer.id);
-                          } : undefined}
-                          onMouseLeave={canInteract ? () => {
-                            setLocalHoverIndex(null);
-                            sendCardHoverEnd();
-                          } : undefined}
+                          onMouseEnter={
+                            canInteract ? () => {
+                              setLocalHoverIndex(idx);
+                              sendCardHover(idx, targetPlayer.id);
+                            } : canHoverAsTarget ? () => {
+                              setTargetHoverIndex(idx);
+                              sendCardHover(idx, targetPlayer.id); // 서버로 전송
+                            } : undefined
+                          }
+                          onMouseLeave={
+                            canInteract ? () => {
+                              setLocalHoverIndex(null);
+                              sendCardHoverEnd();
+                            } : canHoverAsTarget ? () => {
+                              setTargetHoverIndex(null);
+                              sendCardHoverEnd(); // 서버로 전송
+                            } : undefined
+                          }
                           style={{ 
-                            zIndex: isLocalHovering || isOtherHovering ? 100 : idx, 
+                            zIndex: isLocalHovering || isOtherHovering || isTargetHovering ? 100 : idx, 
                             transformOrigin: 'bottom center', 
                           }}
                         >
@@ -258,6 +283,7 @@ const GameBoard = () => {
                           {isOtherHovering && (
                             <div className="hover-indicator">
                               {players.find(p => p.id === hoverState.hoverPlayerId)?.nickname}
+                              {hoverState.hoverPlayerId === targetPlayer?.id ? ' 👆' : ''}
                             </div>
                           )}
                         </motion.div>
@@ -281,7 +307,7 @@ const GameBoard = () => {
                   )}
                 </AnimatePresence>
             
-                {/* ížŒíŠ¸ */}
+                {/* 힌트 */}
                 {isMyTurn && !amITarget && (
                   <div className="center-hint-area">
                     <p className="draw-hint">카드를 클릭하여 뽑으세요</p>
@@ -297,7 +323,7 @@ const GameBoard = () => {
                 exit={{ opacity: 0 }}
               >
                 <span className="turn-indicator">
-                  {isMyTurn ? 'ë‚´ ì°¨ë¡€' : currentTurnPlayer?.nickname}
+                  {isMyTurn ? '내 차례' : currentTurnPlayer?.nickname}
                 </span>
               </motion.div>
             )}
@@ -306,7 +332,7 @@ const GameBoard = () => {
       );
     }
 
-    // ë‚˜ë¨¸ì§€ ì…€ë“¤...
+    // 나머지 셀들...
     if (cellPlayer) {
       if (cellPlayer.id === nextTargetId && position !== 8) { 
         return (
@@ -317,7 +343,7 @@ const GameBoard = () => {
               animate={{ opacity: 0.3 }}
               transition={{ duration: 0.3 }}
             >
-              <span className="empty-icon">↑</span>
+              <span className="empty-icon">→</span>
             </motion.div>
           </div>
         );
