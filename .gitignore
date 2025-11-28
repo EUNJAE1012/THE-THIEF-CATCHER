@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+client/node_modules/
+
+# Build output
+client/dist/
+
+# Local HTTPS certs (절대 올리지 말 것)
+server/cert/
+*.key
+*.crt
+*.csr
+
+# OS metadata
+.DS_Store
+Thumbs.db
