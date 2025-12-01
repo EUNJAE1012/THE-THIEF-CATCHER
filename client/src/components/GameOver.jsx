@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useWebRTC } from '../contexts/WebRTCContext';
+import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
 import './GameOver.css';
 
 // 조롱 문구들
@@ -39,7 +40,10 @@ const GameOver = () => {
   const [fallingMessages, setFallingMessages] = useState([]);
   const [captureNotice, setCaptureNotice] = useState(null);
   const [hasCaptured, setHasCaptured] = useState(false);
-  
+
+  // Background music: play game-end music on loop when game over is shown
+  useBackgroundMusic('/sounds/game-end.mp3', showGameOver, true, 0.4);
+
   if (!gameState?.gameOver || !gameState?.loser || !showGameOver) return null;
 
   const { loser, winners = [] } = gameState;
@@ -47,13 +51,16 @@ const GameOver = () => {
 
   // 비디오 스트림 연결
   useEffect(() => {
-    if (loserVideoRef.current && loser) {
+    if (!showGameOver) return; 
+    if (!loserVideoRef.current) return;
+    if (!loser) return;
+
       if (loser.id === player?.id && localStream) {
         loserVideoRef.current.srcObject = localStream;
       } else if (remoteStreams[loser.id]) {
         loserVideoRef.current.srcObject = remoteStreams[loser.id];
       }
-    }
+    
   }, [loser, localStream, remoteStreams, player?.id]);
 
   // 패배자 얼굴 캡쳐 함수 (isLoser일 때만 실행)
@@ -142,9 +149,9 @@ const GameOver = () => {
     }
   }, [mockPhase]);
 
-  // 떨어지는 조롱 메시지 생성 - 비처럼 계속 생성 (isLoser일 때만 실행)
+  // 떨어지는 조롱 메시지 생성 - 비처럼 계속 생성 (모든 플레이어가 볼 수 있음)
   useEffect(() => {
-    if (!isLoser || mockPhase >= 11) return; // isLoser가 아니면 실행하지 않음
+    if (mockPhase >= 11) return; // mockPhase가 11 이상이면 실행하지 않음
     
     // 초기 메시지들 생성
     const initialMessages = [];
@@ -181,7 +188,7 @@ const GameOver = () => {
     }, 500); // 0.5초마다 새 메시지
     
     return () => clearInterval(interval);
-  }, [mockPhase, isLoser]); // isLoser를 의존성 배열에 추가
+  }, [mockPhase]); // mockPhase만 의존성으로 관리
 
   // 컨페티 생성 (isLoser일 때만 실행)
   useEffect(() => {
@@ -273,7 +280,6 @@ const GameOver = () => {
           </div>
         ))}
       </div>
-      {/* ⚠️ 여기까지 조롱 관련 요소는 isLoser의 영향을 받도록 useEffect를 수정했습니다. */}
 
       <motion.div 
         className="game-over-content"
