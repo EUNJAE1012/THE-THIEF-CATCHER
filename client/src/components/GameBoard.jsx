@@ -31,15 +31,13 @@ const GameBoard = () => {
   const matchSoundRef = useRef(null);
 
   // Background music: play main theme during gameplay
-  useBackgroundMusic('/sounds/main-theme.mp3', true, true, 0.3);
+  useBackgroundMusic('/sounds/main-theme.mp3', gameState ? true : false, true, 0.3);
 
-  if (!gameState) return null;
-
-  const { players, currentTurnId, nextTargetId, myCards } = gameState;
+  const { players = [], currentTurnId, nextTargetId, myCards = [] } = gameState || {};
   const isMyTurn = currentTurnId === player?.id;
   const targetPlayer = players.find(p => p.id === nextTargetId);
   const currentTurnPlayer = players.find(p => p.id === currentTurnId);
-  
+
 
   const amITarget = nextTargetId === player?.id;
 
@@ -53,7 +51,7 @@ const GameBoard = () => {
 
   // matchedCards 감지 및 충돌 애니메이션 트리거
   useEffect(() => {
-    if (gameState.matchedCards && gameState.matchedCards.length > 0) {
+    if (gameState?.matchedCards && gameState.matchedCards.length > 0) {
       // 카드를 2개씩 쌍으로 그룹화
       const pairs = [];
       for (let i = 0; i < gameState.matchedCards.length; i += 2) {
@@ -67,7 +65,7 @@ const GameBoard = () => {
         setCurrentPairIndex(0);
       }
     }
-  }, [gameState.matchedCards]);
+  }, [gameState?.matchedCards]);
 
   // 순차적으로 페어 애니메이션 실행
   useEffect(() => {
@@ -506,6 +504,8 @@ const GameBoard = () => {
       </div>
     );
   };
+
+  if (!gameState) return null;
 
   return (
     <div className="game-board">
