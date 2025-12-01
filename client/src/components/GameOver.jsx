@@ -44,9 +44,7 @@ const GameOver = () => {
   // Background music: play game-end music on loop when game over is shown
   useBackgroundMusic('/sounds/game-end.mp3', showGameOver, true, 0.4);
 
-  if (!gameState?.gameOver || !gameState?.loser || !showGameOver) return null;
-
-  const { loser, winners = [] } = gameState;
+  const { loser, winners = [] } = gameState || {};
   const isLoser = loser?.id === player?.id;
 
   // 비디오 스트림 연결
@@ -219,8 +217,11 @@ const GameOver = () => {
   const countdown = 10 - mockPhase;
   const showButtons = mockPhase >= 11;
 
+  // Early return 조건: hooks는 모두 호출된 이후에 실행
+  if (!gameState?.gameOver || !gameState?.loser || !showGameOver) return null;
+
   return (
-    <motion.div 
+    <motion.div
       className="game-over-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
