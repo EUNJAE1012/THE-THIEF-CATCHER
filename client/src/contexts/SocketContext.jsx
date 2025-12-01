@@ -38,7 +38,7 @@ useEffect(() => {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      secure: true,
+      secure: isDevelopment ? false : true,
       rejectUnauthorized: false,  // 개발 환경에서 자체 서명 인증서 허용
     });
 
