@@ -10,6 +10,37 @@ import VideoGrid from '../components/VideoGrid';
 import GameOver from '../components/GameOver';
 import './GameRoom.css';
 
+// 인디언 포커 컴포넌트 (임시 - 나중에 구현)
+const IndianPokerBoard = () => {
+  const { gameState, player } = useGame();
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100%',
+      color: '#d4af37',
+      fontSize: '24px',
+      textAlign: 'center',
+      padding: '40px'
+    }}>
+      <div>
+        <h2>🎴 인디언 포커 🎴</h2>
+        <p style={{ fontSize: '16px', marginTop: '20px', opacity: 0.7 }}>
+          게임 보드가 곧 구현됩니다...
+        </p>
+        {gameState && (
+          <div style={{ marginTop: '30px', fontSize: '14px' }}>
+            <p>플레이어: {gameState.players?.map(p => p.nickname).join(', ')}</p>
+            <p>상태: {gameState.status}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const GameRoom = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
@@ -68,7 +99,16 @@ const GameRoom = () => {
     );
   }
 
-  const isGameOver = showGameOver && gameState?.gameOver && gameState?.loser;
+  const isGameOver = showGameOver && gameState?.gameOver && (gameState?.loser || gameState?.winner);
+  const gameType = room?.gameType || 'doduk';
+
+  // 게임 타입에 따른 게임 보드 선택
+  const renderGameBoard = () => {
+    if (gameType === 'indian-poker') {
+      return <IndianPokerBoard />;
+    }
+    return <GameBoard />;
+  };
 
   return (
     <div className="game-room">
@@ -76,7 +116,7 @@ const GameRoom = () => {
         <div className="room-info">
           <span className="room-code-label">방 코드</span>
           <span className="room-code">{room.roomCode}</span>
-          <button 
+          <button
             className="copy-button"
             onClick={() => {
               navigator.clipboard.writeText(room.roomCode);
@@ -84,10 +124,14 @@ const GameRoom = () => {
           >
             복사
           </button>
+          <span className="game-type-badge">
+            {gameType === 'doduk' ? '🎴 도둑잡기' : '🃏 인디언 포커'}
+          </span>
         </div>
         <div className="player-info">
           <span className="player-name">{player?.nickname}</span>
           {player?.isHost && <span className="host-badge">방장</span>}
+          {player?.isSpectator && <span className="spectator-badge">관전</span>}
         </div>
       </div>
 
@@ -111,7 +155,7 @@ const GameRoom = () => {
               exit={{ opacity: 0 }}
               className="game-wrapper"
             >
-              <GameBoard />
+              {renderGameBoard()}
             </motion.div>
           )}
         </AnimatePresence>
