@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useWebRTC } from '../contexts/WebRTCContext';
+import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
 import Card from './Card';
 import './GameBoard.css';
 
@@ -20,11 +21,17 @@ const GameBoard = () => {
   const [drawnCardData, setDrawnCardData] = useState(null);
   const [localHoverIndex, setLocalHoverIndex] = useState(null); 
   const [targetHoverIndex, setTargetHoverIndex] = useState(null); // 뽑히는 사람의 hovering
-  const [jokerPulled, setJokerPulled] = useState(false); 
+  const [jokerPulled, setJokerPulled] = useState(false);
   const [cardShuffleKey, setCardShuffleKey] = useState(0);
-  const [stageTransition, setStageTransition] = useState(null); 
+  const [stageTransition, setStageTransition] = useState(null);
+  const [collidingPairs, setCollidingPairs] = useState([]);
+  const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const targetVideoRef = useRef(null);
-  const drawerVideoRef = useRef(null); 
+  const drawerVideoRef = useRef(null);
+  const matchSoundRef = useRef(null);
+
+  // Background music: play main theme during gameplay
+  useBackgroundMusic('/sounds/main-theme.mp3', true, true, 0.3);
 
   if (!gameState) return null;
 
@@ -43,6 +50,56 @@ const GameBoard = () => {
       return () => clearTimeout(timer);
     }
   }, [nextTargetId]);
+
+  // matchedCards 감지 및 충돌 애니메이션 트리거
+  useEffect(() => {
+    if (gameState.matchedCards && gameState.matchedCards.length > 0) {
+      // 카드를 2개씩 쌍으로 그룹화
+      const pairs = [];
+      for (let i = 0; i < gameState.matchedCards.length; i += 2) {
+        if (i + 1 < gameState.matchedCards.length) {
+          pairs.push([gameState.matchedCards[i], gameState.matchedCards[i + 1]]);
+        }
+      }
+
+      if (pairs.length > 0) {
+        setCollidingPairs(pairs);
+        setCurrentPairIndex(0);
+      }
+    }
+  }, [gameState.matchedCards]);
+
+  // 순차적으로 페어 애니메이션 실행
+  useEffect(() => {
+    if (collidingPairs.length === 0) return;
+
+    if (currentPairIndex < collidingPairs.length) {
+      // 각 페어 애니메이션 후 다음 페어로
+      const timer = setTimeout(() => {
+        setCurrentPairIndex(prev => prev + 1);
+      }, 1100); // 애니메이션 시간 + 여유
+
+      return () => clearTimeout(timer);
+    } else {
+      // 모든 애니메이션 완료 후 상태 초기화
+      setCollidingPairs([]);
+      setCurrentPairIndex(0);
+    }
+  }, [currentPairIndex, collidingPairs]);
+
+  // 충돌 시점에 사운드 재생
+  useEffect(() => {
+    if (collidingPairs.length > 0 && currentPairIndex < collidingPairs.length) {
+      const soundTimer = setTimeout(() => {
+        if (matchSoundRef.current) {
+          matchSoundRef.current.currentTime = 0;
+          matchSoundRef.current.play().catch(err => console.log('Sound play failed:', err));
+        }
+      }, 400); // 충돌 시점에 재생
+
+      return () => clearTimeout(soundTimer);
+    }
+  }, [currentPairIndex, collidingPairs]);
 
   const playerPositions = useMemo(() => {
     const positions = [1, 2, 3, 4, 6, 7, 9]; 
@@ -524,7 +581,66 @@ const GameBoard = () => {
         )}
       </AnimatePresence>
 
-      
+      {/* 카드 충돌 애니메이션 오버레이 */}
+      <AnimatePresence mode="wait">
+        {collidingPairs.length > 0 && currentPairIndex < collidingPairs.length && (
+          <motion.div
+            className="collision-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {collidingPairs[currentPairIndex].map((card, idx) => (
+              <motion.div
+                key={`colliding-${currentPairIndex}-${idx}`}
+                className="colliding-card"
+                initial={{
+                  x: idx === 0 ? -200 : 200,
+                  y: 100,
+                  scale: 1,
+                  opacity: 1
+                }}
+                animate={{
+                  x: 0,
+                  y: 0,
+                  scale: [1, 1, 1.3, 0],
+                  opacity: [1, 1, 1, 0],
+                  rotate: [0, 0, 360, 360],
+                  filter: [
+                    'drop-shadow(0 0 0px gold)',
+                    'drop-shadow(0 0 0px gold)',
+                    'drop-shadow(0 0 30px gold)',
+                    'drop-shadow(0 0 0px gold)'
+                  ]
+                }}
+                transition={{
+                  duration: 1.0,
+                  times: [0, 0.4, 0.6, 1],
+                  ease: ['easeOut', 'easeInOut', 'easeIn']
+                }}
+              >
+                <Card card={card} size="small" />
+              </motion.div>
+            ))}
+
+            {/* 충돌 시 반짝임 효과 */}
+            <motion.div
+              className="sparkle-burst"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [0, 2, 0], opacity: [0, 1, 0] }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 오디오 요소 */}
+      <audio
+        ref={matchSoundRef}
+        src="/sounds/card-match.mp3"
+        preload="auto"
+      />
+
     </div>
   );
 };

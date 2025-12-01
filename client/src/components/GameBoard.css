@@ -711,4 +711,38 @@
   font-size: 10px;
   color: var(--color-green);
 }
+
+/* 카드 충돌 애니메이션 오버레이 */
+.collision-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.colliding-card {
+  position: absolute;
+  pointer-events: none;
+}
+
+.sparkle-burst {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(
+    circle,
+    rgba(212, 175, 55, 0.8) 0%,
+    rgba(255, 215, 0, 0.6) 30%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 50px rgba(212, 175, 55, 0.8);
+}
 }

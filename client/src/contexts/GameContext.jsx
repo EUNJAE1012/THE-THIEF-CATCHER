@@ -18,68 +18,81 @@ function gameReducer(state, action) {
   switch (action.type) {
     case 'SET_PLAYER':
       return { ...state, player: action.payload };
-    
+
     case 'SET_ROOM':
       return { ...state, room: action.payload };
-    
+
     case 'UPDATE_ROOM':
       return { ...state, room: action.payload };
-    
+
     case 'SET_GAME_STATE':
       return { ...state, gameState: action.payload, isInGame: true, showGameOver: false };
-    
+
     case 'UPDATE_GAME_STATE':
       return { ...state, gameState: action.payload };
-    
+
     case 'SET_GAME_OVER':
-      return { 
-        ...state, 
-        gameState: { 
-          ...state.gameState, 
-          gameOver: true, 
-          loser: action.payload.loser, 
-          winners: action.payload.winners 
+      return {
+        ...state,
+        gameState: {
+          ...state.gameState,
+          gameOver: true,
+          loser: action.payload.loser,
+          winners: action.payload.winners
         },
         showGameOver: true
       };
-    
+
     case 'HIDE_GAME_OVER':
       return { ...state, showGameOver: false };
-    
-    // Ã­ËœÂ¸Ã«Â²â€ž Ã¬Æ’ÂÃ­Æ’Å“ 
+
+    // 호버 상태
     case 'SET_HOVER':
       return { ...state, hoverState: action.payload };
-    
+
     case 'CLEAR_HOVER':
       return { ...state, hoverState: null };
 
     case 'ADD_CHAT_MESSAGE':
-      return { 
-        ...state, 
-        chatMessages: [...state.chatMessages, action.payload].slice(-100) 
+      return {
+        ...state,
+        chatMessages: [...state.chatMessages, action.payload].slice(-100)
       };
-    
+
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    
+
     case 'CLEAR_ERROR':
       return { ...state, error: null };
-    
+
     case 'RESET_GAME':
-      return { 
-        ...state, 
-        gameState: null, 
+      return {
+        ...state,
+        gameState: null,
         isInGame: false,
         hoverState: null,
         error: null,
         showGameOver: false
       };
-    
+
+    case 'RETURN_TO_LOBBY':
+      // 게임 종료 후 로비로 복귀 (한 번에 모든 상태 업데이트)
+      return {
+        ...state,
+        gameState: null,
+        isInGame: false,
+        hoverState: null,
+        error: null,
+        showGameOver: false,
+        room: action.payload.room,
+        player: action.payload.room.players.find(p => p.id === action.payload.playerId) || state.player
+      };
+
     case 'LEAVE_ROOM':
-      return { 
+      return {
         ...initialState,
       };
-    
+
     default:
       return state;
   }
@@ -103,7 +116,7 @@ export const GameProvider = ({ children }) => {
     // Room updates
     socket.on('room-updated', ({ room }) => {
       dispatch({ type: 'UPDATE_ROOM', payload: room });
-      // Ã­â€Å’Ã«Â Ë†Ã¬ÂÂ´Ã¬â€“Â´ Ã¬Â â€¢Ã«Â³Â´Ã«Ââ€ž Ã¬â€”â€¦Ã«ÂÂ°Ã¬ÂÂ´Ã­Å Â¸ (ready Ã¬Æ’ÂÃ­Æ’Å“ Ã«Ââ„¢ÃªÂ¸Â°Ã­â„¢â€)
+      // 플레이어 정보 업데이트 (ready 상태 등기화)
       const updatedPlayer = room.players.find(p => p.id === socket.id);
       if (updatedPlayer) {
         dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
@@ -116,9 +129,11 @@ export const GameProvider = ({ children }) => {
 
     socket.on('player-left', ({ playerId, room, newHost }) => {
       dispatch({ type: 'UPDATE_ROOM', payload: room });
-      // Ã«Â³Â¸Ã¬ÂÂ¸Ã¬ÂÂ´ Ã¬Æ’Ë† Ã«Â°Â©Ã¬Å¾Â¥Ã¬ÂÂ´ Ã«ÂËœÃ¬â€”Ë†Ã«Å â€Ã¬Â§â‚¬ Ã­â„¢â€¢Ã¬ÂÂ¸
-      if (newHost && newHost.id === socket.id) {
-        dispatch({ type: 'SET_PLAYER', payload: newHost });
+
+      // 모든 플레이어가 room 데이터에서 자신의 최신 정보로 업데이트
+      const updatedPlayer = room.players.find(p => p.id === socket.id);
+      if (updatedPlayer) {
+        dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
       }
     });
 
@@ -127,42 +142,39 @@ export const GameProvider = ({ children }) => {
       dispatch({ type: 'SET_GAME_STATE', payload: gameState });
     });
 
-    socket.on('card-drawn', ({ gameState }) => {
-      dispatch({ type: 'UPDATE_GAME_STATE', payload: gameState });
-      dispatch({ type: 'CLEAR_HOVER' }); // í„´ ë³€ê²½ ì‹œ í˜¸ë²„ ìƒíƒœ ì´ˆê¸°í™”
+    socket.on('card-drawn', ({ gameState, matchedCards }) => {
+      dispatch({ type: 'UPDATE_GAME_STATE', payload: { ...gameState, matchedCards } });
+      dispatch({ type: 'CLEAR_HOVER' });
     });
 
-    // Ã¬Â¹Â´Ã«â€œÅ“ Ã¬â€¦â€Ã­â€Å’ Ã¬ÂÂ´Ã«Â²Â¤Ã­Å Â¸
+    // 카드 셔플 이벤트
     socket.on('cards-shuffled', ({ gameState }) => {
       dispatch({ type: 'UPDATE_GAME_STATE', payload: gameState });
     });
 
     socket.on('game-over', ({ loser, winners }) => {
-      dispatch({ 
-        type: 'SET_GAME_OVER', 
-        payload: { loser, winners } 
+      dispatch({
+        type: 'SET_GAME_OVER',
+        payload: { loser, winners }
       });
     });
 
     // return-to-lobby 이벤트 핸들러
     socket.on('return-to-lobby', ({ room }) => {
       console.log('Returning to lobby', room);
-      
-      // 게임 상태 초기화 및 방 정보 업데이트를 한번에 처리
-      dispatch({ type: 'RESET_GAME' });
-      dispatch({ type: 'UPDATE_ROOM', payload: room });
-      
-      const updatedPlayer = room.players.find(p => p.id === socket.id);
-      if (updatedPlayer) {
-        dispatch({ type: 'SET_PLAYER', payload: updatedPlayer });
-      }
+
+      // 게임 상태 초기화 및 방 정보 업데이트를 한 번의 dispatch로 처리
+      dispatch({
+        type: 'RETURN_TO_LOBBY',
+        payload: { room, playerId: socket.id }
+      });
     });
 
-    // Ã­ËœÂ¸Ã«Â²â€ž Ã¬ÂÂ´Ã«Â²Â¤Ã­Å Â¸ Ã¬Â¶â€ÃªÂ°â‚¬
+    // 호버 이벤트 추가
     socket.on('card-hover', ({ hoverPlayerId, targetPlayerId, cardIndex }) => {
-      dispatch({ 
-        type: 'SET_HOVER', 
-        payload: { hoverPlayerId, targetPlayerId, cardIndex } 
+      dispatch({
+        type: 'SET_HOVER',
+        payload: { hoverPlayerId, targetPlayerId, cardIndex }
       });
     });
 
@@ -196,7 +208,7 @@ export const GameProvider = ({ children }) => {
       socket.off('game-over');
       socket.off('return-to-lobby');
       socket.off('chat-message');
-      socket.off('card-hover');  
+      socket.off('card-hover');
       socket.off('card-hover-end');
       socket.off('nickname-changed');
     };
@@ -304,9 +316,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const playAgain = () => {
-    // 즉시 게임 오버 상태와 게임 상태 초기화
-    dispatch({ type: 'RESET_GAME' });
-    
+    // return-to-lobby 이벤트 핸들러가 게임 상태를 초기화하므로 여기서는 하지 않음
     socket.emit('request-play-again', (response) => {
       if (response.success) {
         // 서버에서 받은 방 정보로 업데이트
