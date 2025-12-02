@@ -179,6 +179,11 @@ const IndianPokerBoard = () => {
 
     const handleReveal = ({ winner, isDraw, cards, gameOver, finalWinner: gameWinner }) => {
 
+
+        if (!cards || !Array.isArray(cards)) {
+          console.error('indian-poker-reveal: cards가 없거나 배열이 아님', cards);
+          return;
+        }
           setRevealLock(true);
 
           setRevealData({ winner, isDraw, cards });
@@ -294,6 +299,9 @@ const IndianPokerBoard = () => {
   const opponent = players.find(p => p.id !== player.id);
 
 
+  const isFirstBetRound =
+    status === 'betting' &&
+    localGameState?.lastAction === null;
 
   const isMyTurn = currentBetterId === player.id && status === 'betting' && !revealData;
 
@@ -333,6 +341,17 @@ const IndianPokerBoard = () => {
 
     if (isMyTurn && me && opponent) {
 
+
+
+
+      // 👉 최초 배팅턴: 콜 불가 + 배팅 0부터 가능
+    if (isFirstBetRound) {
+      setMinBetAmount(0);
+      setMaxBetAmount(me.chips);
+      setBetAmount(0);
+      return;
+    }
+
       const callCost = opponent.totalBet - me.totalBet; // 콜 비용
 
       const minRaise = 1;
@@ -371,7 +390,7 @@ const IndianPokerBoard = () => {
 
     }
 
-  }, [isMyTurn, me?.totalBet, me?.chips, opponent?.totalBet]);
+  }, [isMyTurn, me?.totalBet, me?.chips, opponent?.totalBet, isFirstBetRound]);
 
 
 
@@ -799,7 +818,7 @@ const IndianPokerBoard = () => {
 
                 </button>
 
-                <button className="action-btn call-btn" onClick={handleCall}>
+                <button className="action-btn call-btn" onClick={handleCall} disabled={isFirstBetRound} >
 
                   콜 (Call)
 

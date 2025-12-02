@@ -541,7 +541,6 @@ io.on('connection', (socket) => {
         return callback && callback({ success: false, error: "유효하지 않은 방 또는 게임 타입입니다." });
     }
 
-    // ⭐️ 핵심 수정: room과 manager를 구조분해 할당하여 사용합니다.
     const { room, manager } = roomResult;
 
     // 2. 새 라운드 시작
