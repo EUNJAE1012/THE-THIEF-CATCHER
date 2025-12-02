@@ -122,7 +122,7 @@ class IndianPokerManager {
     return { success: true, gameState: this.createGameState(room) };
   }
 
-  // 새 라운드 시작
+
 // 새 라운드 시작
   startNewRound(room) {
     // 이미 라운드가 시작되었는지 확인
@@ -310,19 +310,24 @@ class IndianPokerManager {
         gameState: this.createGameState(room)
       };
     }
+    room.status = 'reveal';
 
     // 다음 라운드 준비
-    room.pot = 0;
-    room.players.forEach(p => p.totalBet = 0);
+    // room.pot = 0;
+    // room.players.forEach(p => p.totalBet = 0);
 
-    this.startNewRound(room);
-
+    // this.startNewRound(room);
+    const cards = room.players.map(p => ({ playerId: p.id, card: p.currentCard }));
+    const roundWinner = opponent; // 라운드 승자 (Die를 선언했으므로 상대방)
+    
     return {
-      success: true,
-      action: 'die',
-      penalty,
-      gameOver: false,
-      gameState: this.createGameState(room)
+          success: true,
+          action: 'die',
+          penalty,
+          gameOver: false,
+          winner: roundWinner, 
+          cards: cards,
+          gameState: this.createGameState(room)
     };
   }
 
