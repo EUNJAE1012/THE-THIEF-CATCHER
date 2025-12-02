@@ -26,7 +26,7 @@
 /* Player Areas */
 .player-area {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; 
   align-items: center;
   gap: 15px;
   z-index: 1;
@@ -81,7 +81,7 @@
 /* Card Overlay on Video */
 .card-overlay {
   position: absolute;
-  top: -20px; /* 이마 위치 쯤에 배치 */
+  top: -10px; /* 이마 위치 쯤에 배치 */
   left: 50%;
   transform: translateX(-50%);
   z-index: 99;
@@ -89,11 +89,11 @@
 }
 
 .opponent-area .card-overlay {
-  top: -25px; /* 상대방은 이마에 */
+  top: -50px; /* 상대방은 이마에 */
 }
 
 .my-area .card-overlay {
-  top: -25px;
+  top: -50px;
   bottom: auto;
 }
 
@@ -114,37 +114,63 @@
   white-space: nowrap;
 }
 
-/* Player Info */
-.player-info {
+.player-area .player-info {
+  /* 💥 오버레이 위치 속성은 유지 */
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  
+  /* 💥 내부 레이아웃 수정: 한 줄로 바짝 붙여서 */
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* 👈 수정: 가로로 배치 */
   align-items: center;
-  gap: 4px;
-  padding: 8px 20px;
-  background: rgba(15, 23, 42, 0.8);
-  border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  justify-content: center;
+  gap: 8px; /* 👈 수정: 닉네임과 칩 섹션 사이의 간격 */
+  
+  /* 💥 크기 축소 */
+  padding: 4px 10px; /* 👈 수정: 패딩 축소 */
+  max-width: fit-content;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 10px; /* 둥글기 약간 축소 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* 닉네임 크기 축소 */
 .player-nickname {
-  font-size: 16px;
+  font-size: 12px; /* 👈 수정: 14px -> 12px */
+  white-space: nowrap;
   font-weight: bold;
   color: #e2e8f0;
 }
 
+/* 칩 표시 영역 레이아웃 (칩 아이콘과 개수 사이 간격) */
 .chips-display {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px; /* 👈 수정: 내부 간격 더 축소 */
+}
+
+/* 칩 개수 크기 축소 */
+.chip-count {
+  font-size: 16px; /* 👈 수정: 18px -> 16px */
+  font-weight: bold;
+  color: #ffd700;
 }
 
 .bet-status {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-left: 4px;
+  display: inline; 
+  font-size: 10px;
+  color: #b0bec5; 
+  margin-left: 4px; 
+  font-weight: normal;
+  white-space: nowrap;
 }
 
+/* 칩 개수 크기 (유지) */
 .chip-count {
   font-size: 18px;
   font-weight: bold;
@@ -425,36 +451,124 @@
   background: #fbbf24;
 }
 
-/* Mobile Responsive */
-@media (max-width: 600px) {
-  .video-container {
-    width: 160px;
-    height: 120px;
+/* ---------------- 모바일 반응형 (768px 이하) ---------------- */
+@media (max-width: 768px) {
+  /* 1. 최상위 보드 Grid 변경: [ 플레이어 영역 ] [ 액션 사이드바 ] */
+  .indian-poker-board {
+    /* 💥 수정: 2개의 컬럼, 1행으로 변경 */
+    grid-template-columns: 1fr 200px; /* 1열: 플레이어(나머지 공간), 2열: 액션 사이드바(200px) */
+    grid-template-rows: 1fr;
+    padding: 10px;
+    height: 100vh; 
+    overflow: hidden; 
   }
   
+  /* middle-column: 1열 전체를 차지하고 내부에서 플레이어 수직 배치 */
+  .middle-column {
+    grid-column: 1; /* 1열 차지 */
+    grid-row: 1; /* 1행 차지 */
+    gap: 10vh;
+    /* 💥 수정: Grid 대신 Flex로 변경하여 상/하 플레이어 배치 유지 */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* 플레이어 간 간격 유지 */
+    align-items: center;
+    
+    width: 100%;
+    height: 100%; 
+    overflow: hidden; 
+    padding: 15px 0 10px 0;
+  }
+
+  .center-area {
+    position: relative; /* Grid 내 배치 가능하도록 relative 유지 */
+    transform: none;
+    
+    /* 💥 2열 1행에 배치 */
+    grid-column: 2; 
+    grid-row: 1; 
+    
+    /* 사이드바 상단에 고정 */
+    align-self: start; 
+    
+    padding: 10px;
+    background: rgba(15, 23, 42, 0.5); /* 사이드바 배경처럼 */
+    border-bottom: 1px solid #475569;
+    width: 100%; /* 2열 너비에 맞춤 */
+  }
+  
+  /* 💥 3. betting-ui: 2열 하단에 배치 */
   .betting-ui {
-    bottom: 180px;
+    /* middle-column 내부 Grid 설정 무시 */
+    position: relative; 
+    
+    /* 💥 2열 1행에 배치 (center-area 아래에 오도록) */
+    grid-column: 2; 
+    grid-row: 1; 
+    
+    /* 사이드바 하단에 고정 */
+    align-self: center; 
+    
+    width: 100%; 
+    max-width: none;
+    margin: 0;
+    padding: 0; 
+    background: transparent; 
+    border-top: 1px solid #475569; /* 구분선 추가 */
+  }
+
+  /* 4. 플레이어 영역의 카드 위치 조정 (유지) */
+  .opponent-area, .my-area {
+    gap: 15px; /* 카드와 비디오 간격 줄이기 */
+    z-index: 10;
   }
   
-  .action-buttons {
-    flex-wrap: wrap;
+  .video-container {
+    width: 200px; 
+    height: 150px;
+    max-width: 100%; 
+  }
+
+  .card-overlay .card {
+    width: 42px;
+    height: 59px; 
+    font-size: 8px; 
+  }
+
+  .opponent-area .card-overlay {
+    top: -15px; 
   }
   
-  .action-btn {
-    min-width: 80px;
-    font-size: 14px;
-    padding: 10px 0;
+  .my-area .card-overlay {
+    top: -15px; 
+  }
+
+  /* 배팅 컨트롤 스타일 */
+  .bet-controls {
+    padding: 10px 5px; 
+    border: none; /* 사이드바에 테두리가 있으므로 제거 */
+    background: rgba(15, 23, 42, 0.95); 
+    box-shadow: none; 
   }
   
-  .pot-value {
-    font-size: 24px;
+  /* 액션 메시지 중앙 조정 (플레이어 영역 중앙에 위치) */
+  .action-message {
+      grid-column: 1; /* 1열 (플레이어 영역) 중앙에 위치 */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
   }
-  
-  .bet-amount-selector {
-    gap: 10px;
+
+
+
+  /* 칩 개수 크기 축소 */
+  .chip-count {
+    font-size: 16px;
   }
-  
-  .bet-adjust-btn {
-    width: 30px; height: 30px; font-size: 16px;
+
+  /* 베팅 상태 표시 (필요에 따라 숨기거나 작게 표시) */
+  .bet-status {
+    font-size: 10px;
+    margin-left: 0;
   }
 }
