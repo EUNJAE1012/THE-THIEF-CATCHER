@@ -1,6 +1,5 @@
 const express = require('express');
-const fs = require('fs');
-const https = require('https');
+const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
@@ -8,28 +7,24 @@ const GameManager = require('./game/GameManager');
 const path = require('path');
 const app = express();
 
-// cert 폴더 기준은 server/index.js가 있는 위치에서의 상대경로라고 가정
-const options = {
-  key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
-  cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.crt')),
-};
-
-const server = https.createServer(options, app);
+const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: [
+      'http://localhost:5173',      // Vite dev server
+      'https://localhost:3001',     // Local HTTPS
+      'http://localhost',           // Local HTTP fallback
+      'https://www.jomha.site',     // Production with www
+      'https://jomha.site',         // Production without www
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
-
 
 const gameManager = new GameManager(io);
 
@@ -430,7 +425,7 @@ function generateRandomNickname() {
 const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0';
 server.listen(PORT, HOST, () => {
-  console.log(`Server running on https://${HOST}:${PORT}`);
+  console.log(`Server running on http://${HOST}:${PORT}`);
   
   // 로컬 IP 주소 출력
   const os = require('os');
@@ -438,7 +433,7 @@ server.listen(PORT, HOST, () => {
   Object.keys(interfaces).forEach(name => {
     interfaces[name].forEach(iface => {
       if (iface.family === 'IPv4' && !iface.internal) {
-        console.log(`LAN access: https://${iface.address}:${PORT}`);
+        console.log(`LAN access: http://${iface.address}:${PORT}`);
       }
     });
   });

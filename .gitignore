@@ -14,3 +14,16 @@ server/cert/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+.env
+.env.local
+.env.development.local
+.env.production.local
+client/.env
+client/.env.development
+client/.env.production
+
+# workspace
+mynotes/
+# AI Tools
+CLAUDE.md

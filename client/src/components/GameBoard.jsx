@@ -2,36 +2,76 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useWebRTC } from '../contexts/WebRTCContext';
+import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
 import Card from './Card';
 import './GameBoard.css';
 
 const GameBoard = () => {
-  const { 
-    gameState, 
-    player, 
-    drawCard, 
-    sendCardHover, 
-    sendCardHoverEnd, 
-    hoverState 
+  const {
+    gameState,
+    player,
+    drawCard,
+    sendCardHover,
+    sendCardHoverEnd,
+    hoverState
   } = useGame();
   const { remoteStreams } = useWebRTC();
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawAnimation, setDrawAnimation] = useState(null);
   const [drawnCardData, setDrawnCardData] = useState(null);
-  const [localHoverIndex, setLocalHoverIndex] = useState(null); 
-  const [jokerPulled, setJokerPulled] = useState(false); 
+  const [localHoverIndex, setLocalHoverIndex] = useState(null);
+  const [targetHoverIndex, setTargetHoverIndex] = useState(null); // 뽑히는 사람의 hovering
+  const [jokerPulled, setJokerPulled] = useState(false);
   const [cardShuffleKey, setCardShuffleKey] = useState(0);
-  const [stageTransition, setStageTransition] = useState(null); 
+  const [stageTransition, setStageTransition] = useState(null);
+  const [collidingPairs, setCollidingPairs] = useState([]);
+  const [currentPairIndex, setCurrentPairIndex] = useState(0);
+  const [boardGridRect, setBoardGridRect] = useState(null);
   const targetVideoRef = useRef(null);
-  const drawerVideoRef = useRef(null); 
+  const drawerVideoRef = useRef(null);
+  const matchSoundRef = useRef(null);
+  const boardGridRef = useRef(null);
 
-  if (!gameState) return null;
+  // Background music: play main theme during gameplay
+  useBackgroundMusic('/sounds/main-theme.mp3', gameState ? true : false, true, 0.3);
 
-  const { players, currentTurnId, nextTargetId, myCards } = gameState;
+  // board-grid의 실제 위치 계산 (창 크기 변경 시에도 업데이트)
+  useEffect(() => {
+    if (boardGridRef.current) {
+      const rect = boardGridRef.current.getBoundingClientRect();
+      setBoardGridRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2
+      });
+    }
+
+    const handleResize = () => {
+      if (boardGridRef.current) {
+        const rect = boardGridRef.current.getBoundingClientRect();
+        setBoardGridRect({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+          centerX: rect.left + rect.width / 2,
+          centerY: rect.top + rect.height / 2
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const { players = [], currentTurnId, nextTargetId, myCards = [] } = gameState || {};
   const isMyTurn = currentTurnId === player?.id;
   const targetPlayer = players.find(p => p.id === nextTargetId);
   const currentTurnPlayer = players.find(p => p.id === currentTurnId);
-  
+
 
   const amITarget = nextTargetId === player?.id;
 
@@ -42,6 +82,56 @@ const GameBoard = () => {
       return () => clearTimeout(timer);
     }
   }, [nextTargetId]);
+
+  // matchedCards 감지 및 충돌 애니메이션 트리거
+  useEffect(() => {
+    if (gameState?.matchedCards && gameState.matchedCards.length > 0) {
+      // 카드를 2개씩 쌍으로 그룹화
+      const pairs = [];
+      for (let i = 0; i < gameState.matchedCards.length; i += 2) {
+        if (i + 1 < gameState.matchedCards.length) {
+          pairs.push([gameState.matchedCards[i], gameState.matchedCards[i + 1]]);
+        }
+      }
+
+      if (pairs.length > 0) {
+        setCollidingPairs(pairs);
+        setCurrentPairIndex(0);
+      }
+    }
+  }, [gameState?.matchedCards]);
+
+  // 순차적으로 페어 애니메이션 실행
+  useEffect(() => {
+    if (collidingPairs.length === 0) return;
+
+    if (currentPairIndex < collidingPairs.length) {
+      // 각 페어 애니메이션 후 다음 페어로
+      const timer = setTimeout(() => {
+        setCurrentPairIndex(prev => prev + 1);
+      }, 1100); // 애니메이션 시간 + 여유
+
+      return () => clearTimeout(timer);
+    } else {
+      // 모든 애니메이션 완료 후 상태 초기화
+      setCollidingPairs([]);
+      setCurrentPairIndex(0);
+    }
+  }, [currentPairIndex, collidingPairs]);
+
+  // 충돌 시점에 사운드 재생
+  useEffect(() => {
+    if (collidingPairs.length > 0 && currentPairIndex < collidingPairs.length) {
+      const soundTimer = setTimeout(() => {
+        if (matchSoundRef.current) {
+          matchSoundRef.current.currentTime = 0;
+          matchSoundRef.current.play().catch(err => console.log('Sound play failed:', err));
+        }
+      }, 400); // 충돌 시점에 재생
+
+      return () => clearTimeout(soundTimer);
+    }
+  }, [currentPairIndex, collidingPairs]);
 
   const playerPositions = useMemo(() => {
     const positions = [1, 2, 3, 4, 6, 7, 9]; 
@@ -85,7 +175,7 @@ const GameBoard = () => {
       }
       
     } catch (error) {
-      console.error('ì¹´ë“œ ë½‘ê¸° ì‹¤íŒ¨:', error);
+      console.error('카드 뽑기 실패:', error);
     } finally {
       setDrawAnimation(null); 
       setDrawnCardData(null); 
@@ -98,6 +188,7 @@ const GameBoard = () => {
 
     if (position === 5) {
       const canInteract = isMyTurn && !isDrawing;
+      const canHoverAsTarget = amITarget && !isDrawing; // 뽑히는 사람도 hovering 가능
       const centerCards = amITarget ? myCards : null;
       const centerCardCount = amITarget ? myCards.length : (targetPlayer?.cardCount || 0);
       
@@ -139,7 +230,7 @@ const GameBoard = () => {
                       )}
                       <div className="drawer-label">
                         <span className="drawer-name">{currentTurnPlayer?.nickname}</span>
-                        <span className="drawer-action">ì´(ê°€) ì„ íƒ ì¤‘...</span>
+                        <span className="drawer-action">이(가) 선택중...</span>
                       </div>
                     </>
                   ) : (
@@ -192,8 +283,12 @@ const GameBoard = () => {
                       const offsetY = maxOffset * (1 - Math.cos(offsetRatio * Math.PI / 2)); 
                       
                       const isLocalHovering = localHoverIndex === idx;
+                      const isTargetHovering = targetHoverIndex === idx; // 뽑히는 사람의 hovering
+                      
+                      // 다른 사람의 hovering 감지 (뽑는 사람 또는 뽑히는 사람 모두)
                       const isOtherHovering = hoverState && 
                         hoverState.cardIndex === idx &&
+                        hoverState.targetPlayerId === targetPlayer?.id &&
                         hoverState.hoverPlayerId !== player?.id;
                       
                       const isDrawingCard = drawAnimation && 
@@ -203,12 +298,21 @@ const GameBoard = () => {
                       const showFront = amITarget || isDrawnCardVisual;
                       const cardData = amITarget ? centerCards[idx] : (isDrawnCardVisual ? drawnCardData : null);
 
+                      // 뽑히는 사람의 hovering 시 위로 올라가는 효과
+                      let hoverOffsetY = 0;
+                      if (isTargetHovering && canHoverAsTarget) {
+                        hoverOffsetY = -30; // 본인이 hovering - 30px 위로
+                      } else if (isOtherHovering && hoverState.hoverPlayerId === targetPlayer?.id) {
+                        hoverOffsetY = -30; // target이 hovering하는 것을 drawer가 봄 - 30px 위로
+                      }
+
                       return (
                         <motion.div
                           key={`${cardShuffleKey}-${idx}`}
                           className={`target-card-wrapper 
                             ${isOtherHovering ? 'other-hovering' : ''}
                             ${isLocalHovering ? 'local-hovering' : ''}
+                            ${isTargetHovering ? 'target-hovering' : ''}
                           `}
                           initial={{ opacity: 0, y: 50, scale: 0.8 }}
                           animate={isDrawingCard ? {
@@ -218,7 +322,7 @@ const GameBoard = () => {
                             rotate: 0,
                           } : {
                             opacity: 1,
-                            y: offsetY,
+                            y: offsetY + hoverOffsetY,
                             rotate: rotation,
                             scale: 1
                           }}
@@ -235,16 +339,26 @@ const GameBoard = () => {
                             transition: { duration: 0.15 }
                           } : {}} 
                           onClick={canInteract ? () => handleDrawCard(idx) : undefined} 
-                          onMouseEnter={canInteract ? () => {
-                            setLocalHoverIndex(idx);
-                            sendCardHover(idx, targetPlayer.id);
-                          } : undefined}
-                          onMouseLeave={canInteract ? () => {
-                            setLocalHoverIndex(null);
-                            sendCardHoverEnd();
-                          } : undefined}
+                          onMouseEnter={
+                            canInteract ? () => {
+                              setLocalHoverIndex(idx);
+                              sendCardHover(idx, targetPlayer.id);
+                            } : canHoverAsTarget ? () => {
+                              setTargetHoverIndex(idx);
+                              sendCardHover(idx, targetPlayer.id); // 서버로 전송
+                            } : undefined
+                          }
+                          onMouseLeave={
+                            canInteract ? () => {
+                              setLocalHoverIndex(null);
+                              sendCardHoverEnd();
+                            } : canHoverAsTarget ? () => {
+                              setTargetHoverIndex(null);
+                              sendCardHoverEnd(); // 서버로 전송
+                            } : undefined
+                          }
                           style={{ 
-                            zIndex: isLocalHovering || isOtherHovering ? 100 : idx, 
+                            zIndex: isLocalHovering || isOtherHovering || isTargetHovering ? 100 : idx, 
                             transformOrigin: 'bottom center', 
                           }}
                         >
@@ -258,6 +372,7 @@ const GameBoard = () => {
                           {isOtherHovering && (
                             <div className="hover-indicator">
                               {players.find(p => p.id === hoverState.hoverPlayerId)?.nickname}
+                              {hoverState.hoverPlayerId === targetPlayer?.id ? ' 👆' : ''}
                             </div>
                           )}
                         </motion.div>
@@ -281,7 +396,7 @@ const GameBoard = () => {
                   )}
                 </AnimatePresence>
             
-                {/* ížŒíŠ¸ */}
+                {/* 힌트 */}
                 {isMyTurn && !amITarget && (
                   <div className="center-hint-area">
                     <p className="draw-hint">카드를 클릭하여 뽑으세요</p>
@@ -297,7 +412,7 @@ const GameBoard = () => {
                 exit={{ opacity: 0 }}
               >
                 <span className="turn-indicator">
-                  {isMyTurn ? 'ë‚´ ì°¨ë¡€' : currentTurnPlayer?.nickname}
+                  {isMyTurn ? '내 차례' : currentTurnPlayer?.nickname}
                 </span>
               </motion.div>
             )}
@@ -306,7 +421,7 @@ const GameBoard = () => {
       );
     }
 
-    // ë‚˜ë¨¸ì§€ ì…€ë“¤...
+    // 나머지 셀들...
     if (cellPlayer) {
       if (cellPlayer.id === nextTargetId && position !== 8) { 
         return (
@@ -317,7 +432,7 @@ const GameBoard = () => {
               animate={{ opacity: 0.3 }}
               transition={{ duration: 0.3 }}
             >
-              <span className="empty-icon">↑</span>
+              <span className="empty-icon">→</span>
             </motion.div>
           </div>
         );
@@ -424,9 +539,11 @@ const GameBoard = () => {
     );
   };
 
+  if (!gameState) return null;
+
   return (
     <div className="game-board">
-      <div className="board-grid">
+      <div className="board-grid" ref={boardGridRef}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(position => (
           <div key={position} className={`grid-position pos-${position}`}>
             {renderGridCell(position)}
@@ -498,7 +615,90 @@ const GameBoard = () => {
         )}
       </AnimatePresence>
 
-      
+      {/* 카드 충돌 애니메이션 오버레이 */}
+      <AnimatePresence mode="wait">
+        {collidingPairs.length > 0 && currentPairIndex < collidingPairs.length && boardGridRect && (
+          <motion.div
+            className="collision-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              zIndex: 9999
+            }}
+          >
+            {/* board-grid 중심으로 애니메이션 실행하는 컨테이너 */}
+            <motion.div
+              style={{
+                position: 'fixed',
+                top: boardGridRect.centerY,
+                left: boardGridRect.centerX,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 9999
+              }}
+            >
+              {collidingPairs[currentPairIndex].map((card, idx) => (
+                <motion.div
+                  key={`colliding-${currentPairIndex}-${idx}`}
+                  className="colliding-card"
+                  initial={{
+                    x: idx === 0 ? -200 : 200,
+                    y: 100,
+                    scale: 1,
+                    opacity: 1
+                  }}
+                  animate={{
+                    x: 0,
+                    y: 0,
+                    scale: [1, 1, 1.3, 0],
+                    opacity: [1, 1, 1, 0],
+                    rotate: [0, 0, 360, 360],
+                    filter: [
+                      'drop-shadow(0 0 0px gold)',
+                      'drop-shadow(0 0 0px gold)',
+                      'drop-shadow(0 0 30px gold)',
+                      'drop-shadow(0 0 0px gold)'
+                    ]
+                  }}
+                  transition={{
+                    duration: 1.0,
+                    times: [0, 0.4, 0.6, 1],
+                    ease: ['easeOut', 'easeInOut', 'easeIn']
+                  }}
+                >
+                  <Card card={card} size="small" />
+                </motion.div>
+              ))}
+
+              {/* 충돌 시 반짝임 효과 */}
+              <motion.div
+                className="sparkle-burst"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 2, 0], opacity: [0, 1, 0] }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 오디오 요소 */}
+      <audio
+        ref={matchSoundRef}
+        src="/sounds/card-match.mp3"
+        preload="auto"
+      />
+
     </div>
   );
 };

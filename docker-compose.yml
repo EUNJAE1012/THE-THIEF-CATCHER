@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: thief-catcher-backend
+    ports:
+      - "3001:3001"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: thief-catcher-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge

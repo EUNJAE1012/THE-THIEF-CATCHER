@@ -6,7 +6,13 @@
     "server": "node server/index.js",
     "client": "cd client && npm run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install:all": "npm install && cd client && npm install"
+    "install:all": "npm install && cd client && npm install",
+    "build:prod": "cd client && npm run build",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f backend",
+    "deploy": "npm run build:prod && npm run docker:build && npm run docker:up"
   },
   "dependencies": {
     "express": "^4.18.2",

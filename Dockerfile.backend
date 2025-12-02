@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# package.json 복사 및 의존성 설치
+COPY package*.json ./
+RUN npm install
+
+# server 폴더만 복사
+COPY server ./server
+
+# 포트 노출
+EXPOSE 3001
+
+# 서버 실행
+CMD ["npm", "run", "server"]
