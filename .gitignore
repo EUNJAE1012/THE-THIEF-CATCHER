@@ -23,6 +23,8 @@ client/.env
 client/.env.development
 client/.env.production
 
+# workspace
+mynotes/
 # AI Tools
 CLAUDE.md
 .plan.md
