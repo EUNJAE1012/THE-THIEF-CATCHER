@@ -714,16 +714,7 @@
 
 /* 카드 충돌 애니메이션 오버레이 */
 .collision-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 9999;
+  /* 위치는 인라인 스타일로 동적으로 계산됨 */
 }
 
 .colliding-card {
