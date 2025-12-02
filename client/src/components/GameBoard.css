@@ -494,6 +494,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 4px;
+  width: 100%;
 }
 
 .my-cell.is-target {
@@ -503,11 +504,6 @@
 
 .target-badge {
   font-size: 14px;
-}
-
-.my-cards-hint {
-  font-size: 10px;
-  color: var(--color-text-muted);
 }
 
 .my-cards-container {
@@ -695,10 +691,20 @@
 
 /* ÃƒÂ«Ã¢â‚¬Å¡Ã‚Â´ÃƒÂªÃ‚Â°Ã¢â€šÂ¬ ÃƒÂ­Ã†â€™Ã¢â€šÂ¬ÃƒÂªÃ‚Â²Ã…Â¸ÃƒÂ¬Ã‚ÂÃ‚Â¼ ÃƒÂ«Ã¢â‚¬Â¢Ã…â€™ ÃƒÂ­Ã…Â¾Ã…â€™ÃƒÂ­Ã…Â Ã‚Â¸ */
 .my-cards-hint {
-  font-size: 12px;
-  color: var(--color-gold);
+  font-size: 24px;
+  color: #ffffff;
   text-align: center;
   padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.my-cards-hint > div {
+  width: 100%;
+  text-align: center;
 }
 
 /* ÃƒÂ¬Ã‚Â¹Ã‚Â´ÃƒÂ«Ã¢â‚¬Å“Ã…â€œ ÃƒÂ¬Ã‹â€ Ã‹Å“ ÃƒÂ­Ã¢â‚¬Â¦Ã‚ÂÃƒÂ¬Ã…Â Ã‚Â¤ÃƒÂ­Ã…Â Ã‚Â¸ */

@@ -134,16 +134,16 @@ const GameBoard = () => {
   }, [currentPairIndex, collidingPairs]);
 
   const playerPositions = useMemo(() => {
-    const positions = [1, 2, 3, 4, 6, 7, 9]; 
+    const positions = [1, 2, 3, 4, 6, 7, 9];
     const activePlayers = players.filter(p => !p.isEliminated);
-    
+
     const sortedPlayers = [...activePlayers].sort((a, b) => {
       if (a.id === player?.id) return 1;
       if (b.id === player?.id || b.isEliminated) return -1;
       return a.nickname.localeCompare(b.nickname);
     }).filter(p => p.id !== player?.id);
-    
-    const map = { 8: players.find(p => p.id === player?.id) }; 
+
+    const map = { 8: players.find(p => p.id === player?.id) };
 
     for (let i = 0; i < sortedPlayers.length; i++) {
       map[positions[i]] = sortedPlayers[i];
@@ -155,17 +155,17 @@ const GameBoard = () => {
   const handleDrawCard = async (cardIndex) => {
     if (!isMyTurn || !targetPlayer || isDrawing) return;
     setIsDrawing(true);
-    setDrawAnimation({ targetPlayerId: targetPlayer.id, cardIndex }); 
+    setDrawAnimation({ targetPlayerId: targetPlayer.id, cardIndex });
     setDrawnCardData(null);
 
     try {
       const response = await drawCard(targetPlayer.id, cardIndex);
-      
+
       if (response.success) {
         setDrawnCardData(response.result.drawnCard);
-        
-        await new Promise(resolve => setTimeout(resolve, 600)); 
-        
+
+        await new Promise(resolve => setTimeout(resolve, 600));
+
         setCardShuffleKey(prev => prev + 1);
 
         if (response.result.drawnCard && response.result.drawnCard.isJoker) {
@@ -173,12 +173,12 @@ const GameBoard = () => {
           setTimeout(() => setJokerPulled(false), 2000);
         }
       }
-      
+
     } catch (error) {
       console.error('카드 뽑기 실패:', error);
     } finally {
-      setDrawAnimation(null); 
-      setDrawnCardData(null); 
+      setDrawAnimation(null);
+      setDrawnCardData(null);
       setIsDrawing(false);
     }
   };
@@ -191,7 +191,7 @@ const GameBoard = () => {
       const canHoverAsTarget = amITarget && !isDrawing; // 뽑히는 사람도 hovering 가능
       const centerCards = amITarget ? myCards : null;
       const centerCardCount = amITarget ? myCards.length : (targetPlayer?.cardCount || 0);
-      
+
       return (
         <div className={`grid-cell center-cell ${(isMyTurn || amITarget) && targetPlayer ? 'focused' : ''}`}>
           <AnimatePresence mode="wait">
@@ -211,12 +211,12 @@ const GameBoard = () => {
                       <video
                         // Ref Callback
                         ref={(el) => {
-                          drawerVideoRef.current = el; 
+                          drawerVideoRef.current = el;
                           const stream = currentTurnPlayer ? remoteStreams[currentTurnPlayer.id] : null;
                           if (el && stream && el.srcObject !== stream) {
                             el.srcObject = stream;
                           } else if (el && !stream && el.srcObject) {
-                            el.srcObject = null; 
+                            el.srcObject = null;
                           }
                         }}
                         autoPlay
@@ -239,7 +239,7 @@ const GameBoard = () => {
                       <video
 
                         ref={(el) => {
-                          targetVideoRef.current = el; 
+                          targetVideoRef.current = el;
                           const stream = targetPlayer ? remoteStreams[targetPlayer.id] : null;
                           if (el && stream && el.srcObject !== stream) {
                             el.srcObject = stream;
@@ -263,8 +263,8 @@ const GameBoard = () => {
                   )}
                 </div>
 
-                <motion.div 
-                  key={cardShuffleKey} 
+                <motion.div
+                  key={cardShuffleKey}
                   className="target-cards-overlay-container"
                   initial={amITarget ? { y: 150, opacity: 0 } : { opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -272,28 +272,28 @@ const GameBoard = () => {
                 >
                   {(() => {
                     const cardCount = centerCardCount;
-                    const maxFanAngle = Math.min(50, cardCount * 7); 
+                    const maxFanAngle = Math.min(50, cardCount * 7);
                     const rotationStep = cardCount > 1 ? maxFanAngle / (cardCount - 1) : 0;
                     const startRotation = -maxFanAngle / 2;
-                    const maxOffset = 20; 
+                    const maxOffset = 20;
 
                     return Array.from({ length: cardCount }).map((_, idx) => {
                       const rotation = startRotation + idx * rotationStep;
-                      const offsetRatio = Math.abs(rotation) / (maxFanAngle / 2 || 1); 
-                      const offsetY = maxOffset * (1 - Math.cos(offsetRatio * Math.PI / 2)); 
-                      
+                      const offsetRatio = Math.abs(rotation) / (maxFanAngle / 2 || 1);
+                      const offsetY = maxOffset * (1 - Math.cos(offsetRatio * Math.PI / 2));
+
                       const isLocalHovering = localHoverIndex === idx;
                       const isTargetHovering = targetHoverIndex === idx; // 뽑히는 사람의 hovering
-                      
+
                       // 다른 사람의 hovering 감지 (뽑는 사람 또는 뽑히는 사람 모두)
-                      const isOtherHovering = hoverState && 
+                      const isOtherHovering = hoverState &&
                         hoverState.cardIndex === idx &&
                         hoverState.targetPlayerId === targetPlayer?.id &&
                         hoverState.hoverPlayerId !== player?.id;
-                      
-                      const isDrawingCard = drawAnimation && 
+
+                      const isDrawingCard = drawAnimation &&
                         drawAnimation.cardIndex === idx;
-                      
+
                       const isDrawnCardVisual = isDrawingCard && drawnCardData;
                       const showFront = amITarget || isDrawnCardVisual;
                       const cardData = amITarget ? centerCards[idx] : (isDrawnCardVisual ? drawnCardData : null);
@@ -309,7 +309,7 @@ const GameBoard = () => {
                       return (
                         <motion.div
                           key={`${cardShuffleKey}-${idx}`}
-                          className={`target-card-wrapper 
+                          className={`target-card-wrapper
                             ${isOtherHovering ? 'other-hovering' : ''}
                             ${isLocalHovering ? 'local-hovering' : ''}
                             ${isTargetHovering ? 'target-hovering' : ''}
@@ -326,19 +326,19 @@ const GameBoard = () => {
                             rotate: rotation,
                             scale: 1
                           }}
-                          transition={isDrawingCard ? { 
+                          transition={isDrawingCard ? {
                             duration: 0.5,
                             ease: 'easeOut'
                           } : {
                             duration: 0.3,
                             delay: idx * 0.02
                           }}
-                          whileHover={canInteract ? { 
-                            scale: 1.1, 
+                          whileHover={canInteract ? {
+                            scale: 1.1,
                             y: offsetY - 15,
                             transition: { duration: 0.15 }
-                          } : {}} 
-                          onClick={canInteract ? () => handleDrawCard(idx) : undefined} 
+                          } : {}}
+                          onClick={canInteract ? () => handleDrawCard(idx) : undefined}
                           onMouseEnter={
                             canInteract ? () => {
                               setLocalHoverIndex(idx);
@@ -357,18 +357,18 @@ const GameBoard = () => {
                               sendCardHoverEnd(); // 서버로 전송
                             } : undefined
                           }
-                          style={{ 
-                            zIndex: isLocalHovering || isOtherHovering || isTargetHovering ? 100 : idx, 
-                            transformOrigin: 'bottom center', 
+                          style={{
+                            zIndex: isLocalHovering || isOtherHovering || isTargetHovering ? 100 : idx,
+                            transformOrigin: 'bottom center',
                           }}
                         >
-                          <Card 
+                          <Card
                             card={cardData}
-                            isBack={!showFront} 
-                            size="medium" 
-                            isClickable={canInteract} 
+                            isBack={!showFront}
+                            size="medium"
+                            isClickable={canInteract}
                           />
-                          
+
                           {isOtherHovering && (
                             <div className="hover-indicator">
                               {players.find(p => p.id === hoverState.hoverPlayerId)?.nickname}
@@ -395,7 +395,7 @@ const GameBoard = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-            
+
                 {/* 힌트 */}
                 {isMyTurn && !amITarget && (
                   <div className="center-hint-area">
@@ -403,7 +403,7 @@ const GameBoard = () => {
                   </div>
                 )}
               </motion.div>
-            ) : ( 
+            ) : (
               <motion.div
                 key="no-target"
                 className="waiting-turn"
@@ -423,10 +423,10 @@ const GameBoard = () => {
 
     // 나머지 셀들...
     if (cellPlayer) {
-      if (cellPlayer.id === nextTargetId && position !== 8) { 
+      if (cellPlayer.id === nextTargetId && position !== 8) {
         return (
           <div className="grid-cell empty-cell transitioning">
-            <motion.div 
+            <motion.div
               className="empty-slot"
               initial={{ opacity: 1 }}
               animate={{ opacity: 0.3 }}
@@ -437,32 +437,35 @@ const GameBoard = () => {
           </div>
         );
       }
-      
+
       if (cellPlayer.id === player?.id) {
         const cardCount = myCards.length;
-        
+
         if (amITarget) {
+          const turnPlayerText = currentTurnPlayer?.id === player?.id ? '내' : `[${currentTurnPlayer?.nickname}] 님`;
+
           return (
             <div className={`grid-cell my-cell pos-${position} is-target`}>
-              <div className="player-info-container">
+              {/* <div className="player-info-container">
                 <span className="player-nickname">{cellPlayer.nickname} (Me)</span>
-              </div>
-              <motion.div 
+              </div> */}
+              <motion.div
                 className="my-cards-hint"
-                animate={{ opacity: [0.5, 1, 0.5] }}
+                animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                ↑ 중앙에서 선택됨
+                <div>내 카드를</div>
+                <div>{turnPlayerText}이 선택중</div>
               </motion.div>
             </div>
           );
         }
-        
+
         return (
           <div className={`grid-cell my-cell pos-${position}`}>
-            <div className="player-info-container">
+            {/* <div className="player-info-container">
               <span className="player-nickname">{cellPlayer.nickname} (Me)</span>
-            </div>
+            </div> */}
             <div className="my-cards-container">
               {cardCount > 0 ? (
                 myCards.map((card, idx) => (
@@ -470,7 +473,7 @@ const GameBoard = () => {
                     key={`my-card-${idx}-${card.suit}-${card.value}`}
                     className="my-card-wrapper"
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }} 
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.02 }}
                     style={{ zIndex: idx }}
                   >
@@ -489,7 +492,7 @@ const GameBoard = () => {
           </div>
         );
       }
-      
+
       const cardCount = cellPlayer.cardCount;
 
       return (
@@ -512,7 +515,7 @@ const GameBoard = () => {
             )}
           </div>
           <div className="player-info-container">
-            <span className="player-nickname">{cellPlayer.nickname}</span>
+            {/* <span className="player-nickname">{cellPlayer.nickname}</span> */}
             <div className="card-count-display">
               {cardCount > 0 ? (
                 <span className="card-count-text">🃏 {cardCount}</span>
@@ -553,7 +556,7 @@ const GameBoard = () => {
 
       <AnimatePresence>
         {isMyTurn && !targetPlayer && (
-          <motion.div 
+          <motion.div
             className="turn-overlay"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -579,23 +582,23 @@ const GameBoard = () => {
                   key={i}
                   className="joker-icon-huge"
                   initial={{ scale: 0, rotate: -180, y: 100 }}
-                  animate={{ 
-                    scale: [0, 1.3, 1], 
+                  animate={{
+                    scale: [0, 1.3, 1],
                     rotate: [i === 1 ? 0 : (i === 0 ? -15 : 15), i === 1 ? 0 : (i === 0 ? -10 : 10)],
-                    y: 0 
+                    y: 0
                   }}
-                  transition={{ 
-                    delay: i * 0.1, 
-                    type: 'spring', 
-                    stiffness: 300, 
-                    damping: 12 
+                  transition={{
+                    delay: i * 0.1,
+                    type: 'spring',
+                    stiffness: 300,
+                    damping: 12
                   }}
                 >
                   🃏
                 </motion.div>
               ))}
             </div>
-            <motion.div 
+            <motion.div
               className="joker-text-huge"
               initial={{ scale: 0, y: 50 }}
               animate={{ scale: [0, 1.2, 1], y: 0 }}
@@ -603,7 +606,7 @@ const GameBoard = () => {
             >
               조커!
             </motion.div>
-            <motion.div 
+            <motion.div
               className="joker-subtext"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
