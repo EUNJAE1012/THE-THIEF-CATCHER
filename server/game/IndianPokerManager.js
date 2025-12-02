@@ -201,12 +201,18 @@ class IndianPokerManager {
     const opponentBet = opponent.totalBet;
     const playerBet = player.totalBet;
 
+    
     // 배팅 금액은 상대방보다 많아야 함
     const additionalBet = amount;
     const newTotalBet = playerBet + additionalBet;
 
-    if (newTotalBet <= opponentBet) {
-      return { success: false, error: '상대방보다 많은 금액을 배팅해야 합니다.' };
+    const isFirstBetRound = opponentBet === playerBet;
+
+    if (!isFirstBetRound) {
+      // 첫 턴이 아닐 때만 기존 로직 적용
+      if (newTotalBet <= opponentBet) {
+        return { success: false, error: '상대방보다 많은 금액을 배팅해야 합니다.' };
+      }
     }
 
     // 올인 처리
