@@ -120,8 +120,8 @@ const IndianPokerBoard = () => {
 
     // 액션 알림 (Bet, Call, Die)
 
-    const handleAction = ({ action, playerId, amount, penalty }) => {
-
+    const handleAction = (data) => {
+      const { action, playerId, amount, penalty } = data;
       let message = '';
 
       const isMe = playerId === player.id;
@@ -149,9 +149,16 @@ const IndianPokerBoard = () => {
         case 'die':
 
           message = `${actorName}: 다이... (포기)`;
-
+          
           if (penalty > 0) message += ` ☠️ 페널티 -${penalty}`;
 
+          handleReveal({
+            winner: data.winner,
+            isDraw: false,
+            cards: data.cards,
+            gameOver: data.gameOver,
+            finalWinner: data.finalWinner
+          });
           break;
 
         default:

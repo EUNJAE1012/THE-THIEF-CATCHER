@@ -419,50 +419,47 @@ io.on('connection', (socket) => {
   });
 
   // 다이
-  socket.on('indian-poker-die', (callback) => {
-    const { roomCode, playerId } = socket;
-    if (!roomCode) return;
+    socket.on('indian-poker-die', (callback) => {
+        const { roomCode, playerId } = socket;
+        if (!roomCode) return;
 
-    const roomResult = gameManagerFactory.getRoom(roomCode);
-    if (!roomResult || roomResult.gameType !== 'indian-poker') return;
+        const roomResult = gameManagerFactory.getRoom(roomCode);
+        if (!roomResult || roomResult.gameType !== 'indian-poker') return;
 
-    const { room, manager } = roomResult;
-    const result = manager.die(roomCode, playerId);
+        const { room, manager } = roomResult;
+        
+        // NOTE: manager.die는 칩 정산 후 room.status를 'reveal'로 변경해야 함.
+        const result = manager.die(roomCode, playerId);
 
-    if (result.success) {
-      // 다이 액션 브로드캐스트
-      io.to(roomCode).emit('indian-poker-action', {
-        action: 'die',
-        playerId,
-        penalty: result.penalty
-      });
-
-      if (result.gameOver) {
-        setTimeout(() => {
-          io.to(roomCode).emit('game-over', {
-            winner: result.winner
+        if (result.success) {
+          // 1. 다이 액션 브로드캐스트 (액션 메시지 표시)
+          io.to(roomCode).emit('indian-poker-action', {
+            action: 'die',
+            playerId,
+            penalty: result.penalty,
+            cards: result.cards,
+            winner: result.winner,
+            gameOver: result.gameOver,
+            finalWinner: result.finalWinner
           });
-        }, 1500);
-      } else {
-        // 새 라운드 시작
-        setTimeout(() => {
-          room.players.forEach(p => {
-            const playerSocket = io.sockets.sockets.get(p.id);
-            if (playerSocket) {
-              playerSocket.emit('indian-poker-state-update', {
-                gameState: manager.getPlayerView(roomCode, p.id)
-              });
-            }
+
+          // 이 이벤트가 클라이언트의 handleReveal 함수를 실행시킵니다.
+          io.to(roomCode).emit('indian-poker-reveal', {
+            winner: result.winner,
+            isDraw: false,
+            cards: result.cards, // manager.die에서 모든 플레이어의 카드 정보가 반환되었다고 가정
+            gameOver: result.gameOver, // 게임 종료 여부
+            finalWinner: result.finalWinner
           });
-        }, 2000);
-      }
 
-      callback({ success: true });
-    } else {
-      callback({ success: false, error: result.error });
-    }
-  });
+          callback({ success: true });
+        } else {
+          callback({ success: false, error: result.error });
+        }
+    });
 
+
+  
   // === 공통 이벤트 ===
 
   // 한번 더 하기 요청
@@ -530,7 +527,7 @@ io.on('connection', (socket) => {
     });
   });
 
-    socket.on("indian-poker-next-round", (callback) => {
+  socket.on("indian-poker-next-round", (callback) => {
     const { roomCode } = socket;
     
     // 1. 방어 및 GameManager 인스턴스 획득 (ReferenceError 방지)
