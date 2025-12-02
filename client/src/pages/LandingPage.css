@@ -11,6 +11,67 @@
   overflow: hidden;
 }
 
+/* Game Selection Tabs */
+.game-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 30px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.game-tab {
+  flex: 1;
+  padding: 12px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(212, 175, 55, 0.5);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+
+.game-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(184, 115, 51, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-tab:hover::before {
+  opacity: 1;
+}
+
+.game-tab:hover {
+  color: rgba(212, 175, 55, 0.8);
+}
+
+.game-tab.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(184, 115, 51, 0.15));
+  color: #d4af37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.game-tab.active::before {
+  opacity: 1;
+}
+
 /* Atmospheric Background Elements */
 .bg-gradient {
   position: absolute;

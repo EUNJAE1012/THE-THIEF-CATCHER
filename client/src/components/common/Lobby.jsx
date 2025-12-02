@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../contexts/GameContext';
+import { useGame } from '../../contexts/GameContext';
 import './Lobby.css';
 
 const Lobby = () => {
@@ -81,7 +81,7 @@ const Lobby = () => {
       <div className="lobby-content">
         <div className="lobby-header">
           <h2>대기실</h2>
-          <p className="game-type">도둑잡기</p>
+          <p className="game-type"></p>
         </div>
 
         {/* Player List */}

@@ -23,7 +23,7 @@ useEffect(() => {
     let baseUrl = envSocketUrl;
     if (!baseUrl) {
       if (isDevelopment) {
-        baseUrl = `https://localhost:3001`;
+        baseUrl = `http://localhost:3001`;
       } else {
         // 프로덕션: 현재 호스트의 https 사용
         baseUrl = `https://${window.location.hostname}`;
@@ -57,7 +57,7 @@ useEffect(() => {
       setIsConnected(false);
 
       // Fallback 로직: 프로덕션 URL 실패 시 localhost 재시도
-      if (baseUrl !== `https://localhost:3001` && !isDevelopment) {
+      if (baseUrl !== `http://localhost:3001` && !isDevelopment) {
         console.log('Attempting fallback connection to localhost:3001');
         // 재연결 시도 시 자동으로 fallback 처리됨 (reconnectionAttempts로 관리)
       }

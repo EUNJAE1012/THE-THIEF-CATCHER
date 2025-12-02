@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
-const GameManager = require('./game/GameManager');
+const GameManagerFactory = require('./game/GameManagerFactory');
 const path = require('path');
 const app = express();
 
@@ -26,19 +26,23 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-const gameManager = new GameManager(io);
+const gameManagerFactory = new GameManagerFactory(io);
 
 // REST API endpoints
 app.get('/api/room/:roomCode', (req, res) => {
-  const room = gameManager.getRoom(req.params.roomCode);
-  if (!room) {
+  const result = gameManagerFactory.getRoom(req.params.roomCode);
+  if (!result) {
     return res.status(404).json({ error: '방을 찾을 수 없습니다.' });
   }
-  if (room.players.length >= 6) {
+  const { room, gameType } = result;
+
+  // 게임 타입별로 인원 제한 확인
+  const maxPlayers = gameType === 'indian-poker' ? 2 : 6;
+  if (room.players.length >= maxPlayers) {
     return res.status(400).json({ error: '방이 가득 찼습니다.' });
   }
-  res.json({ 
-    exists: true, 
+  res.json({
+    exists: true,
     playerCount: room.players.length,
     gameType: room.gameType,
     status: room.status
@@ -58,32 +62,36 @@ io.on('connection', (socket) => {
       isHost: true,
       isReady: true,
       cards: [],
-      isEliminated: false
+      chips: gameType === 'indian-poker' ? 30 : 0,
+      isEliminated: false,
+      isSpectator: false
     };
-    
-    gameManager.createRoom(roomCode, player, gameType);
+
+    gameManagerFactory.createRoom(roomCode, player, gameType);
     socket.join(roomCode);
     socket.roomCode = roomCode;
     socket.playerId = player.id;
-    
-    callback({ 
-      success: true, 
-      roomCode, 
+
+    const result = gameManagerFactory.getRoom(roomCode);
+    callback({
+      success: true,
+      roomCode,
       player,
-      room: gameManager.getRoom(roomCode)
+      room: result.room
     });
   });
 
   // 방 참여
   socket.on('join-room', ({ roomCode, nickname }, callback) => {
-    const room = gameManager.getRoom(roomCode);
-    
-    if (!room) {
+    const result = gameManagerFactory.getRoom(roomCode);
+
+    if (!result) {
       return callback({ success: false, error: '방을 찾을 수 없습니다.' });
     }
-    if (room.players.length >= 6) {
-      return callback({ success: false, error: '방이 가득 찼습니다.' });
-    }
+
+    const { room, gameType } = result;
+    const maxPlayers = gameType === 'indian-poker' ? 2 : 6;
+
     if (room.status !== 'waiting') {
       return callback({ success: false, error: '게임이 이미 시작되었습니다.' });
     }
@@ -94,41 +102,61 @@ io.on('connection', (socket) => {
       isHost: false,
       isReady: false,
       cards: [],
-      isEliminated: false
+      chips: gameType === 'indian-poker' ? 30 : 0,
+      isEliminated: false,
+      isSpectator: room.players.length >= maxPlayers
     };
 
-    gameManager.addPlayerToRoom(roomCode, player);
+    gameManagerFactory.addPlayerToRoom(roomCode, player);
     socket.join(roomCode);
     socket.roomCode = roomCode;
     socket.playerId = player.id;
 
-    callback({ 
-      success: true, 
+    const updatedResult = gameManagerFactory.getRoom(roomCode);
+    callback({
+      success: true,
       player,
-      room: gameManager.getRoom(roomCode)
+      room: updatedResult.room
     });
 
     // 다른 플레이어들에게 알림
-    socket.to(roomCode).emit('player-joined', { 
-      player, 
-      room: gameManager.getRoom(roomCode) 
+    socket.to(roomCode).emit('player-joined', {
+      player,
+      room: updatedResult.room
     });
+  });
+
+  // 게임 타입 변경
+  socket.on('change-game-type', ({ newGameType }, callback) => {
+    const { roomCode, playerId } = socket;
+    if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
+
+    const result = gameManagerFactory.changeGameType(roomCode, newGameType);
+    if (result.success) {
+      io.to(roomCode).emit('game-type-changed', {
+        gameType: newGameType,
+        room: result.room
+      });
+      callback({ success: true, room: result.room });
+    } else {
+      callback({ success: false, error: result.error });
+    }
   });
 
   // 방 나가기 (명시적)
   socket.on('leave-room', () => {
     const { roomCode, playerId } = socket;
     if (roomCode && playerId) {
-      const result = gameManager.removePlayer(roomCode, playerId);
+      const result = gameManagerFactory.removePlayer(roomCode, playerId);
       socket.leave(roomCode);
       socket.roomCode = null;
       socket.playerId = null;
-      
+
       if (result.roomDeleted) {
         console.log(`Room ${roomCode} deleted`);
       } else if (result.room) {
-        io.to(roomCode).emit('player-left', { 
-          playerId, 
+        io.to(roomCode).emit('player-left', {
+          playerId,
           room: result.room,
           newHost: result.newHost
         });
@@ -141,35 +169,17 @@ io.on('connection', (socket) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
 
-    const room = gameManager.getRoom(roomCode);
-    if (!room) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
-
-    // 게임 중에는 닉네임 변경 불가
-    if (room.status === 'playing') {
-      return callback({ success: false, error: '게임 중에는 닉네임을 변경할 수 없습니다.' });
+    const result = gameManagerFactory.changeNickname(roomCode, playerId, newNickname);
+    if (result.success) {
+      io.to(roomCode).emit('nickname-changed', {
+        playerId,
+        newNickname,
+        room: result.room
+      });
+      callback({ success: true });
+    } else {
+      callback({ success: false, error: '닉네임 변경에 실패했습니다.' });
     }
-
-    const player = room.players.find(p => p.id === playerId);
-    if (!player) return callback({ success: false, error: '플레이어를 찾을 수 없습니다.' });
-
-    // 닉네임 유효성 검사
-    if (!newNickname || newNickname.trim().length === 0) {
-      return callback({ success: false, error: '닉네임을 입력해주세요.' });
-    }
-    if (newNickname.trim().length > 12) {
-      return callback({ success: false, error: '닉네임은 12자 이하로 입력해주세요.' });
-    }
-
-    player.nickname = newNickname.trim();
-    
-    callback({ success: true, player });
-
-    // 모든 플레이어에게 알림
-    io.to(roomCode).emit('nickname-changed', {
-      playerId,
-      newNickname: player.nickname,
-      room: gameManager.getRoom(roomCode)
-    });
   });
 
   // 준비 상태 토글
@@ -177,7 +187,7 @@ io.on('connection', (socket) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
 
-    const result = gameManager.toggleReady(roomCode, playerId);
+    const result = gameManagerFactory.toggleReady(roomCode, playerId);
     if (result.room) {
       const updatedPlayer = result.room.players.find(p => p.id === playerId);
       io.to(roomCode).emit('room-updated', { room: result.room });
@@ -192,16 +202,24 @@ io.on('connection', (socket) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return;
 
-    const room = gameManager.getRoom(roomCode);
-    if (!room) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
 
+    const { room, gameType, manager } = roomResult;
     const player = room.players.find(p => p.id === playerId);
     if (!player?.isHost) {
       return callback({ success: false, error: '방장만 게임을 시작할 수 있습니다.' });
     }
 
-    if (room.players.length < 2) {
-      return callback({ success: false, error: '최소 2명이 필요합니다.' });
+    // 게임 타입별 인원 체크
+    if (gameType === 'indian-poker') {
+      if (room.players.length !== 2) {
+        return callback({ success: false, error: '인디언 포커는 정확히 2명이 필요합니다.' });
+      }
+    } else {
+      if (room.players.length < 2) {
+        return callback({ success: false, error: '최소 2명이 필요합니다.' });
+      }
     }
 
     const allReady = room.players.every(p => p.isHost || p.isReady);
@@ -209,30 +227,48 @@ io.on('connection', (socket) => {
       return callback({ success: false, error: '모든 플레이어가 준비해야 합니다.' });
     }
 
-    const gameState = gameManager.startGame(roomCode);
+    const gameState = gameManagerFactory.startGame(roomCode);
     if (gameState) {
-      // 각 플레이어에게 자신의 카드만 보이도록 전송
+      // 각 플레이어에게 자신의 뷰 전송
       room.players.forEach(p => {
         const playerSocket = io.sockets.sockets.get(p.id);
         if (playerSocket) {
           playerSocket.emit('game-started', {
-            gameState: gameManager.getPlayerView(roomCode, p.id)
+            gameState: manager.getPlayerView(roomCode, p.id)
           });
         }
       });
+
+      // 관전자에게도 게임 시작 알림
+      if (room.spectators) {
+        room.spectators.forEach(s => {
+          const spectatorSocket = io.sockets.sockets.get(s.id);
+          if (spectatorSocket) {
+            spectatorSocket.emit('game-started', {
+              gameState: manager.createGameState(room)
+            });
+          }
+        });
+      }
+
       callback({ success: true });
     }
   });
+
+  // === 도둑잡기 이벤트 ===
 
   // 카드 뽑기
   socket.on('draw-card', ({ targetPlayerId, cardIndex }, callback) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return;
 
-    const result = gameManager.drawCard(roomCode, playerId, targetPlayerId, cardIndex);
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult || roomResult.gameType !== 'doduk') return;
+
+    const { room, manager } = roomResult;
+    const result = manager.drawCard(roomCode, playerId, targetPlayerId, cardIndex);
+
     if (result.success) {
-      const room = gameManager.getRoom(roomCode);
-      
       // 모든 플레이어에게 업데이트 전송
       room.players.forEach(p => {
         const playerSocket = io.sockets.sockets.get(p.id);
@@ -243,7 +279,7 @@ io.on('connection', (socket) => {
             cardIndex,
             drawnCard: p.id === playerId ? result.drawnCard : null,
             matchedCards: result.matchedCards,
-            gameState: gameManager.getPlayerView(roomCode, p.id)
+            gameState: manager.getPlayerView(roomCode, p.id)
           });
         }
       });
@@ -254,8 +290,6 @@ io.on('connection', (socket) => {
           loser: result.loser,
           winners: result.winners
         });
-        
-        // 자동으로 로비 복귀하지 않음 - 클라이언트에서 버튼으로 제어
       }
 
       callback({ success: true, result });
@@ -264,32 +298,184 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 카드 섞기
+  socket.on('shuffle-cards', ({ targetPlayerId }, callback) => {
+    const { roomCode, playerId } = socket;
+    if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
+
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult || roomResult.gameType !== 'doduk') return;
+
+    const { room, manager } = roomResult;
+    const result = manager.shuffleTargetCards(roomCode, playerId, targetPlayerId);
+
+    if (result.success) {
+      room.players.forEach(p => {
+        const playerSocket = io.sockets.sockets.get(p.id);
+        if (playerSocket) {
+          playerSocket.emit('cards-shuffled', {
+            shufflerId: playerId,
+            targetId: targetPlayerId,
+            gameState: manager.getPlayerView(roomCode, p.id)
+          });
+        }
+      });
+
+      callback({ success: true });
+    } else {
+      callback({ success: false, error: result.error });
+    }
+  });
+
+  // === 인디언 포커 이벤트 ===
+
+  // 배팅
+  socket.on('indian-poker-bet', ({ amount }, callback) => {
+    const { roomCode, playerId } = socket;
+    if (!roomCode) return;
+
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult || roomResult.gameType !== 'indian-poker') return;
+
+    const { room, manager } = roomResult;
+    const result = manager.placeBet(roomCode, playerId, amount);
+
+    if (result.success) {
+      io.to(roomCode).emit('indian-poker-action', {
+        action: 'bet',
+        playerId,
+        amount,
+        gameState: manager.createGameState(room)
+      });
+
+      // 각 플레이어에게 개별 뷰 전송
+      room.players.forEach(p => {
+        const playerSocket = io.sockets.sockets.get(p.id);
+        if (playerSocket) {
+          playerSocket.emit('indian-poker-state-update', {
+            gameState: manager.getPlayerView(roomCode, p.id)
+          });
+        }
+      });
+
+      callback({ success: true, gameState: result.gameState });
+    } else {
+      callback({ success: false, error: result.error });
+    }
+  });
+
+  // 콜
+  socket.on('indian-poker-call', (callback) => {
+    const { roomCode, playerId } = socket;
+    if (!roomCode) return;
+
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult || roomResult.gameType !== 'indian-poker') return;
+
+    const { room, manager } = roomResult;
+    const result = manager.call(roomCode, playerId);
+
+    if (result.success) {
+      // 콜 액션 브로드캐스트
+      io.to(roomCode).emit('indian-poker-action', {
+        action: 'call',
+        playerId
+      });
+
+      // 카드 공개
+      setTimeout(() => {
+        io.to(roomCode).emit('indian-poker-reveal', {
+          winner: result.winner,
+          isDraw: result.isDraw,
+          cards: room.players.map(p => ({
+            playerId: p.id,
+            card: p.currentCard
+          }))
+        });
+
+        if (result.gameOver) {
+          io.to(roomCode).emit('game-over', {
+            winner: result.finalWinner
+          });
+        } else {
+          // 새 라운드 시작
+          setTimeout(() => {
+            room.players.forEach(p => {
+              const playerSocket = io.sockets.sockets.get(p.id);
+              if (playerSocket) {
+                playerSocket.emit('indian-poker-state-update', {
+                  gameState: manager.getPlayerView(roomCode, p.id)
+                });
+              }
+            });
+          }, 2000);
+        }
+      }, 1000);
+
+      callback({ success: true });
+    } else {
+      callback({ success: false, error: result.error });
+    }
+  });
+
+  // 다이
+    socket.on('indian-poker-die', (callback) => {
+        const { roomCode, playerId } = socket;
+        if (!roomCode) return;
+
+        const roomResult = gameManagerFactory.getRoom(roomCode);
+        if (!roomResult || roomResult.gameType !== 'indian-poker') return;
+
+        const { room, manager } = roomResult;
+        
+        // NOTE: manager.die는 칩 정산 후 room.status를 'reveal'로 변경해야 함.
+        const result = manager.die(roomCode, playerId);
+
+        if (result.success) {
+          // 1. 다이 액션 브로드캐스트 (액션 메시지 표시)
+          io.to(roomCode).emit('indian-poker-action', {
+            action: 'die',
+            playerId,
+            penalty: result.penalty,
+            cards: result.cards,
+            winner: result.winner,
+            gameOver: result.gameOver,
+            finalWinner: result.finalWinner
+          });
+
+          // 이 이벤트가 클라이언트의 handleReveal 함수를 실행시킵니다.
+          io.to(roomCode).emit('indian-poker-reveal', {
+            winner: result.winner,
+            isDraw: false,
+            cards: result.cards, // manager.die에서 모든 플레이어의 카드 정보가 반환되었다고 가정
+            gameOver: result.gameOver, // 게임 종료 여부
+            finalWinner: result.finalWinner
+          });
+
+          callback({ success: true });
+        } else {
+          callback({ success: false, error: result.error });
+        }
+    });
+
+
+  
+  // === 공통 이벤트 ===
+
   // 한번 더 하기 요청
   socket.on('request-play-again', (callback) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
 
-    const room = gameManager.getRoom(roomCode);
-    if (!room) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult) return callback({ success: false, error: '방을 찾을 수 없습니다.' });
 
-    // 게임 리셋
-    const updatedRoom = gameManager.resetGame(roomCode);
-    
+    const { room, manager } = roomResult;
+    const updatedRoom = manager.resetGame(roomCode);
+
     if (updatedRoom) {
-      // 모든 플레이어 상태 확실히 초기화
-      updatedRoom.players.forEach(p => {
-        p.cards = [];
-        p.isEliminated = false;
-        p.isReady = p.isHost; // 방장만 준비완료
-      });
-      updatedRoom.status = 'waiting';
-      updatedRoom.currentTurnId = null;
-      updatedRoom.nextTargetId = null;
-      
-      // 요청한 플레이어에게 응답
       callback({ success: true, room: updatedRoom });
-      
-      // 모든 플레이어에게 로비 복귀 알림
+
       io.to(roomCode).emit('return-to-lobby', {
         room: updatedRoom
       });
@@ -298,52 +484,25 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 카드 섞기
-  socket.on('shuffle-cards', ({ targetPlayerId }, callback) => {
-    const { roomCode, playerId } = socket;
-    if (!roomCode) return callback({ success: false, error: '방에 참여하지 않았습니다.' });
-
-    const result = gameManager.shuffleTargetCards(roomCode, playerId, targetPlayerId);
-    if (result.success) {
-      const room = gameManager.getRoom(roomCode);
-      
-      // 모든 플레이어에게 셔플 이벤트 전송
-      room.players.forEach(p => {
-        const playerSocket = io.sockets.sockets.get(p.id);
-        if (playerSocket) {
-          playerSocket.emit('cards-shuffled', {
-            shufflerId: playerId,
-            targetId: targetPlayerId,
-            gameState: gameManager.getPlayerView(roomCode, p.id)
-          });
-        }
-      });
-      
-      callback({ success: true });
-    } else {
-      callback({ success: false, error: result.error });
-    }
-  });
-
   // WebRTC 시그널링
   socket.on('webrtc-offer', ({ targetId, offer }) => {
-    io.to(targetId).emit('webrtc-offer', { 
-      senderId: socket.id, 
-      offer 
+    io.to(targetId).emit('webrtc-offer', {
+      senderId: socket.id,
+      offer
     });
   });
 
   socket.on('webrtc-answer', ({ targetId, answer }) => {
-    io.to(targetId).emit('webrtc-answer', { 
-      senderId: socket.id, 
-      answer 
+    io.to(targetId).emit('webrtc-answer', {
+      senderId: socket.id,
+      answer
     });
   });
 
   socket.on('webrtc-ice-candidate', ({ targetId, candidate }) => {
-    io.to(targetId).emit('webrtc-ice-candidate', { 
-      senderId: socket.id, 
-      candidate 
+    io.to(targetId).emit('webrtc-ice-candidate', {
+      senderId: socket.id,
+      candidate
     });
   });
 
@@ -351,7 +510,7 @@ io.on('connection', (socket) => {
   socket.on('card-hover', ({ cardIndex, targetPlayerId }) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return;
-    
+
     socket.to(roomCode).emit('card-hover', {
       hoverPlayerId: playerId,
       targetPlayerId,
@@ -362,19 +521,63 @@ io.on('connection', (socket) => {
   socket.on('card-hover-end', () => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return;
-    
+
     socket.to(roomCode).emit('card-hover-end', {
       hoverPlayerId: playerId
     });
   });
+
+  socket.on("indian-poker-next-round", (callback) => {
+    const { roomCode } = socket;
+    
+    // 1. 방어 및 GameManager 인스턴스 획득 (ReferenceError 방지)
+    if (!roomCode) {
+        return callback && callback({ success: false, error: "방 코드가 없습니다." });
+    }
+
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    
+    if (!roomResult || roomResult.gameType !== 'indian-poker') {
+        return callback && callback({ success: false, error: "유효하지 않은 방 또는 게임 타입입니다." });
+    }
+
+    const { room, manager } = roomResult;
+
+    // 2. 새 라운드 시작
+    // GameManager가 roomCode를 인자로 받는다고 가정합니다.
+    const success = manager.startNewRound(room); 
+
+    if (success) {
+        // 3. 각 플레이어에게 맞춤형 뷰 전송 (상태 불일치/카드 누락 해결)
+        room.players.forEach(p => {
+            const playerSocket = io.sockets.sockets.get(p.id);
+            if (playerSocket) {
+                playerSocket.emit('indian-poker-state-update', {
+                    // ⭐️ getPlayerView를 사용하여 상대방 카드만 보이게 합니다.
+                    gameState: manager.getPlayerView(roomCode, p.id) 
+                });
+            }
+        });
+        
+            // 클라이언트 콜백이 있다면 성공 알림
+            callback && callback({ success: true });
+        } else {
+            callback && callback({ success: false, error: "새 라운드 시작에 실패했습니다." });
+        }
+    });
 
   // 채팅
   socket.on('chat-message', ({ message }) => {
     const { roomCode, playerId } = socket;
     if (!roomCode) return;
 
-    const room = gameManager.getRoom(roomCode);
-    const player = room?.players.find(p => p.id === playerId);
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    if (!roomResult) return;
+
+    const { room } = roomResult;
+    const player = room.players.find(p => p.id === playerId) ||
+                   (room.spectators && room.spectators.find(s => s.id === playerId));
+
     if (player) {
       io.to(roomCode).emit('chat-message', {
         senderId: playerId,
@@ -389,12 +592,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const { roomCode, playerId } = socket;
     if (roomCode && playerId) {
-      const result = gameManager.removePlayer(roomCode, playerId);
+      const result = gameManagerFactory.removePlayer(roomCode, playerId);
       if (result.roomDeleted) {
         console.log(`Room ${roomCode} deleted`);
       } else if (result.room) {
-        io.to(roomCode).emit('player-left', { 
-          playerId, 
+        io.to(roomCode).emit('player-left', {
+          playerId,
           room: result.room,
           newHost: result.newHost
         });
@@ -426,7 +629,7 @@ const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0';
 server.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
-  
+
   // 로컬 IP 주소 출력
   const os = require('os');
   const interfaces = os.networkInterfaces();

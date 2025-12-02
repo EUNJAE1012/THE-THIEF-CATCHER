@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useGame } from '../contexts/GameContext';
+import { useGame } from '../../contexts/GameContext';
 import './Chat.css';
 
 const Chat = () => {
