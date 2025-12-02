@@ -7,31 +7,65 @@ import Card from './Card';
 import './GameBoard.css';
 
 const GameBoard = () => {
-  const { 
-    gameState, 
-    player, 
-    drawCard, 
-    sendCardHover, 
-    sendCardHoverEnd, 
-    hoverState 
+  const {
+    gameState,
+    player,
+    drawCard,
+    sendCardHover,
+    sendCardHoverEnd,
+    hoverState
   } = useGame();
   const { remoteStreams } = useWebRTC();
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawAnimation, setDrawAnimation] = useState(null);
   const [drawnCardData, setDrawnCardData] = useState(null);
-  const [localHoverIndex, setLocalHoverIndex] = useState(null); 
+  const [localHoverIndex, setLocalHoverIndex] = useState(null);
   const [targetHoverIndex, setTargetHoverIndex] = useState(null); // 뽑히는 사람의 hovering
   const [jokerPulled, setJokerPulled] = useState(false);
   const [cardShuffleKey, setCardShuffleKey] = useState(0);
   const [stageTransition, setStageTransition] = useState(null);
   const [collidingPairs, setCollidingPairs] = useState([]);
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
+  const [boardGridRect, setBoardGridRect] = useState(null);
   const targetVideoRef = useRef(null);
   const drawerVideoRef = useRef(null);
   const matchSoundRef = useRef(null);
+  const boardGridRef = useRef(null);
 
   // Background music: play main theme during gameplay
   useBackgroundMusic('/sounds/main-theme.mp3', gameState ? true : false, true, 0.3);
+
+  // board-grid의 실제 위치 계산 (창 크기 변경 시에도 업데이트)
+  useEffect(() => {
+    if (boardGridRef.current) {
+      const rect = boardGridRef.current.getBoundingClientRect();
+      setBoardGridRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2
+      });
+    }
+
+    const handleResize = () => {
+      if (boardGridRef.current) {
+        const rect = boardGridRef.current.getBoundingClientRect();
+        setBoardGridRect({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+          centerX: rect.left + rect.width / 2,
+          centerY: rect.top + rect.height / 2
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { players = [], currentTurnId, nextTargetId, myCards = [] } = gameState || {};
   const isMyTurn = currentTurnId === player?.id;
@@ -509,7 +543,7 @@ const GameBoard = () => {
 
   return (
     <div className="game-board">
-      <div className="board-grid">
+      <div className="board-grid" ref={boardGridRef}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(position => (
           <div key={position} className={`grid-position pos-${position}`}>
             {renderGridCell(position)}
@@ -583,53 +617,77 @@ const GameBoard = () => {
 
       {/* 카드 충돌 애니메이션 오버레이 */}
       <AnimatePresence mode="wait">
-        {collidingPairs.length > 0 && currentPairIndex < collidingPairs.length && (
+        {collidingPairs.length > 0 && currentPairIndex < collidingPairs.length && boardGridRect && (
           <motion.div
             className="collision-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              zIndex: 9999
+            }}
           >
-            {collidingPairs[currentPairIndex].map((card, idx) => (
-              <motion.div
-                key={`colliding-${currentPairIndex}-${idx}`}
-                className="colliding-card"
-                initial={{
-                  x: idx === 0 ? -200 : 200,
-                  y: 100,
-                  scale: 1,
-                  opacity: 1
-                }}
-                animate={{
-                  x: 0,
-                  y: 0,
-                  scale: [1, 1, 1.3, 0],
-                  opacity: [1, 1, 1, 0],
-                  rotate: [0, 0, 360, 360],
-                  filter: [
-                    'drop-shadow(0 0 0px gold)',
-                    'drop-shadow(0 0 0px gold)',
-                    'drop-shadow(0 0 30px gold)',
-                    'drop-shadow(0 0 0px gold)'
-                  ]
-                }}
-                transition={{
-                  duration: 1.0,
-                  times: [0, 0.4, 0.6, 1],
-                  ease: ['easeOut', 'easeInOut', 'easeIn']
-                }}
-              >
-                <Card card={card} size="small" />
-              </motion.div>
-            ))}
-
-            {/* 충돌 시 반짝임 효과 */}
+            {/* board-grid 중심으로 애니메이션 실행하는 컨테이너 */}
             <motion.div
-              className="sparkle-burst"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0, 2, 0], opacity: [0, 1, 0] }}
-              transition={{ delay: 0.4, duration: 0.4 }}
-            />
+              style={{
+                position: 'fixed',
+                top: boardGridRect.centerY,
+                left: boardGridRect.centerX,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 9999
+              }}
+            >
+              {collidingPairs[currentPairIndex].map((card, idx) => (
+                <motion.div
+                  key={`colliding-${currentPairIndex}-${idx}`}
+                  className="colliding-card"
+                  initial={{
+                    x: idx === 0 ? -200 : 200,
+                    y: 100,
+                    scale: 1,
+                    opacity: 1
+                  }}
+                  animate={{
+                    x: 0,
+                    y: 0,
+                    scale: [1, 1, 1.3, 0],
+                    opacity: [1, 1, 1, 0],
+                    rotate: [0, 0, 360, 360],
+                    filter: [
+                      'drop-shadow(0 0 0px gold)',
+                      'drop-shadow(0 0 0px gold)',
+                      'drop-shadow(0 0 30px gold)',
+                      'drop-shadow(0 0 0px gold)'
+                    ]
+                  }}
+                  transition={{
+                    duration: 1.0,
+                    times: [0, 0.4, 0.6, 1],
+                    ease: ['easeOut', 'easeInOut', 'easeIn']
+                  }}
+                >
+                  <Card card={card} size="small" />
+                </motion.div>
+              ))}
+
+              {/* 충돌 시 반짝임 효과 */}
+              <motion.div
+                className="sparkle-burst"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 2, 0], opacity: [0, 1, 0] }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+              />
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
