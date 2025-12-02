@@ -179,6 +179,11 @@ const IndianPokerBoard = () => {
 
     const handleReveal = ({ winner, isDraw, cards, gameOver, finalWinner: gameWinner }) => {
 
+
+        if (!cards || !Array.isArray(cards)) {
+          console.error('indian-poker-reveal: cards가 없거나 배열이 아님', cards);
+          return;
+        }
           setRevealLock(true);
 
           setRevealData({ winner, isDraw, cards });

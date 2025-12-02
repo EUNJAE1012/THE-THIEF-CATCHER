@@ -127,8 +127,8 @@ class IndianPokerManager {
   startNewRound(room) {
     // 이미 라운드가 시작되었는지 확인
     // 두 플레이어가 동시에 요청을 보내더라도 한 번만 실행되도록 함
-    if (room.status === 'betting' && room.players.every(p => p.currentCard)) {
-        return true; // 이미 시작되었으므로 성공으로 간주하고 true 반환
+    if (room.status === 'betting' && room.lastAction === null) {
+        return true;
     }
 
     // 덱이 2장 미만이면 새로 생성
@@ -206,7 +206,7 @@ class IndianPokerManager {
     const additionalBet = amount;
     const newTotalBet = playerBet + additionalBet;
 
-    const isFirstBetRound = opponentBet === playerBet;
+    const isFirstBetRound = room.lastAction===null;
 
     if (!isFirstBetRound) {
       // 첫 턴이 아닐 때만 기존 로직 적용
@@ -289,6 +289,11 @@ class IndianPokerManager {
 
     room.lastAction = 'die';
 
+    const cards = room.players.map(p => ({
+    playerId: p.id,
+    card: p.currentCard,
+    }));
+
     // 카드가 10이면 상대에게 칩 10개 추가 지급
     let penalty = 0;
     if (player.currentCard?.value === 10) {
@@ -301,7 +306,7 @@ class IndianPokerManager {
     // 상대방이 pot 획득
     opponent.chips += room.pot;
     room.roundWinner = opponent.id;
-
+    room.pot = 0;
     // 게임 종료 체크
     const gameOver = this.checkGameEnd(room);
 
@@ -313,17 +318,12 @@ class IndianPokerManager {
         penalty,
         gameOver: true,
         winner: gameOver.winner,
+        cards,
         gameState: this.createGameState(room)
       };
     }
     room.status = 'reveal';
 
-    // 다음 라운드 준비
-    // room.pot = 0;
-    // room.players.forEach(p => p.totalBet = 0);
-
-    // this.startNewRound(room);
-    const cards = room.players.map(p => ({ playerId: p.id, card: p.currentCard }));
     const roundWinner = opponent; // 라운드 승자 (Die를 선언했으므로 상대방)
     
     return {
