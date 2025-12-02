@@ -9,7 +9,8 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { isConnected } = useSocket();
   const { createRoom, joinRoom, error, clearError } = useGame();
-  
+
+  const [selectedGame, setSelectedGame] = useState('doduk'); // 'doduk' or 'indian-poker'
   const [nickname, setNickname] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -26,12 +27,27 @@ const LandingPage = () => {
     setLocalError('');
     
     try {
-      const response = await createRoom(nickname || null, 'doduk');
+      const response = await createRoom(nickname || null, selectedGame);
       navigate(`/game/${response.roomCode}`);
     } catch (err) {
       setLocalError(err || '방 생성에 실패했습니다.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const gameInfo = {
+    doduk: {
+      title: '도둑잡기',
+      subtitle: 'THE THIEF CATCHER',
+      players: '2~6인',
+      description: '조커를 마지막까지 들고 있는 자가 도둑이다'
+    },
+    'indian-poker': {
+      title: '인디언 포커',
+      subtitle: 'INDIAN POKER',
+      players: '2인',
+      description: '상대의 카드만 보이는 치열한 심리전'
     }
   };
 
@@ -81,31 +97,54 @@ const LandingPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
+        {/* Game Selection Tabs */}
+        <motion.div
+          className="game-tabs"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+        >
+          <button
+            className={`game-tab ${selectedGame === 'doduk' ? 'active' : ''}`}
+            onClick={() => setSelectedGame('doduk')}
+          >
+            도둑잡기
+          </button>
+          <button
+            className={`game-tab ${selectedGame === 'indian-poker' ? 'active' : ''}`}
+            onClick={() => setSelectedGame('indian-poker')}
+          >
+            인디언<br/> 포커
+          </button>
+        </motion.div>
+
         {/* Logo/Title */}
         <div className="title-section">
-          <motion.div 
+          <motion.div
             className="title-decoration"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           />
-          <motion.h1 
+          <motion.h1
             className="main-title"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
+            key={selectedGame}
           >
-            도둑잡기
+            {gameInfo[selectedGame].title}
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="subtitle"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
+            key={`${selectedGame}-subtitle`}
           >
-            THE THIEF CATCHER
+            {gameInfo[selectedGame].subtitle}
           </motion.p>
-          <motion.div 
+          <motion.div
             className="title-decoration bottom"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
@@ -186,14 +225,15 @@ const LandingPage = () => {
         </motion.div>
 
         {/* Game info */}
-        <motion.div 
+        <motion.div
           className="game-info"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
+          key={`${selectedGame}-info`}
         >
-          <p>2~6인 실시간 멀티플레이어 카드 게임</p>
-          <p className="info-detail">조커를 마지막까지 들고 있는 자가 도둑이다</p>
+          <p>{gameInfo[selectedGame].players} 실시간 멀티플레이어 카드 게임</p>
+          <p className="info-detail">{gameInfo[selectedGame].description}</p>
         </motion.div>
       </motion.div>
 

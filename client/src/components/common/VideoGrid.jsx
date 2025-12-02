@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { useGame } from '../contexts/GameContext';
-import { useWebRTC } from '../contexts/WebRTCContext';
+import { useGame } from '../../contexts/GameContext';
+import { useWebRTC } from '../../contexts/WebRTCContext';
 import './VideoGrid.css';
 
 const VideoGrid = () => {

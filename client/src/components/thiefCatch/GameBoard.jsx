@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../contexts/GameContext';
-import { useWebRTC } from '../contexts/WebRTCContext';
-import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
-import Card from './Card';
+import { useGame } from '../../contexts/GameContext';
+import { useWebRTC } from '../../contexts/WebRTCContext';
+import { useBackgroundMusic } from '../../hooks/useBackgroundMusic';
+import Card from '../common/Card';
 import './GameBoard.css';
 
 const GameBoard = () => {

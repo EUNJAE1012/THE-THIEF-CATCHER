@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../contexts/GameContext';
-import { useWebRTC } from '../contexts/WebRTCContext';
-import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
+import { useGame } from '../../contexts/GameContext';
+import { useWebRTC } from '../../contexts/WebRTCContext';
+import { useBackgroundMusic } from '../../hooks/useBackgroundMusic';
 import './GameOver.css';
 
 // 조롱 문구들

@@ -27,3 +27,5 @@ client/.env.production
 mynotes/
 # AI Tools
 CLAUDE.md
+.plan.md
+.claude/

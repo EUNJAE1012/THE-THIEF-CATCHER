@@ -3,12 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useSocket } from '../contexts/SocketContext';
-import Lobby from '../components/Lobby';
-import GameBoard from '../components/GameBoard';
-import Chat from '../components/Chat';
-import VideoGrid from '../components/VideoGrid';
-import GameOver from '../components/GameOver';
+import Lobby from '../components/common/Lobby';
+import GameBoard from '../components/thiefCatch/GameBoard';
+import Chat from '../components/common/Chat';
+import VideoGrid from '../components/common/VideoGrid';
+import GameOver from '../components/thiefCatch/GameOver';
+// ------------------------------------------------------------------
+// 인디언 포커 완성된 컴포넌트 import
+import IndianPokerBoard from '../components/IndianPoker/IndianPokerBoard';
+// ------------------------------------------------------------------
 import './GameRoom.css';
+
+// 삭제: 임시 IndianPokerBoard 컴포넌트 제거
 
 const GameRoom = () => {
   const { roomCode } = useParams();
@@ -68,7 +74,17 @@ const GameRoom = () => {
     );
   }
 
-  const isGameOver = showGameOver && gameState?.gameOver && gameState?.loser;
+  const isGameOver = showGameOver && gameState?.gameOver && (gameState?.loser || gameState?.winner);
+  const gameType = room?.gameType || 'doduk';
+
+  // 게임 타입에 따른 게임 보드 선택
+  const renderGameBoard = () => {
+    if (gameType === 'indian-poker') {
+      // 완성된 IndianPokerBoard 컴포넌트 반환
+      return <IndianPokerBoard />;
+    }
+    return <GameBoard />;
+  };
 
   return (
     <div className="game-room">
@@ -76,7 +92,7 @@ const GameRoom = () => {
         <div className="room-info">
           <span className="room-code-label">방 코드</span>
           <span className="room-code">{room.roomCode}</span>
-          <button 
+          <button
             className="copy-button"
             onClick={() => {
               navigator.clipboard.writeText(room.roomCode);
@@ -84,10 +100,14 @@ const GameRoom = () => {
           >
             복사
           </button>
+          <span className="game-type-badge">
+            {gameType === 'doduk' ? '🎴 도둑잡기' : '🃏 인디언 포커'}
+          </span>
         </div>
         <div className="player-info">
           <span className="player-name">{player?.nickname}</span>
           {player?.isHost && <span className="host-badge">방장</span>}
+          {player?.isSpectator && <span className="spectator-badge">관전</span>}
         </div>
       </div>
 
@@ -111,7 +131,7 @@ const GameRoom = () => {
               exit={{ opacity: 0 }}
               className="game-wrapper"
             >
-              <GameBoard />
+              {renderGameBoard()}
             </motion.div>
           )}
         </AnimatePresence>

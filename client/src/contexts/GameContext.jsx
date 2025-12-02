@@ -198,6 +198,23 @@ export const GameProvider = ({ children }) => {
       }
     });
 
+    // 인디언 포커 이벤트
+    socket.on('indian-poker-action', ({ action, playerId, amount }) => {
+      console.log('Indian Poker Action:', action, playerId, amount);
+    });
+
+    socket.on('indian-poker-state-update', ({ gameState }) => {
+      dispatch({ type: 'UPDATE_GAME_STATE', payload: gameState });
+    });
+
+    socket.on('indian-poker-reveal', ({ winner, isDraw, cards }) => {
+      console.log('Cards revealed:', winner, isDraw, cards);
+    });
+
+    socket.on('game-type-changed', ({ gameType, room }) => {
+      dispatch({ type: 'UPDATE_ROOM', payload: room });
+    });
+
     return () => {
       socket.off('room-updated');
       socket.off('player-joined');
@@ -211,6 +228,10 @@ export const GameProvider = ({ children }) => {
       socket.off('card-hover');
       socket.off('card-hover-end');
       socket.off('nickname-changed');
+      socket.off('indian-poker-action');
+      socket.off('indian-poker-state-update');
+      socket.off('indian-poker-reveal');
+      socket.off('game-type-changed');
     };
   }, [socket]);
 
