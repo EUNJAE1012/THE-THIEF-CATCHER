@@ -76,7 +76,7 @@ class IndianPokerManager {
       for (let value = 1; value <= 10; value++) {
         deck.push({
           value,
-          suit: set === 0 ? 'red' : 'blue',
+          suit: set === 0 ? 'hearts' : 'spades', 
           displayValue: value.toString()
         });
       }
@@ -123,7 +123,14 @@ class IndianPokerManager {
   }
 
   // 새 라운드 시작
+// 새 라운드 시작
   startNewRound(room) {
+    // 이미 라운드가 시작되었는지 확인
+    // 두 플레이어가 동시에 요청을 보내더라도 한 번만 실행되도록 함
+    if (room.status === 'betting' && room.players.every(p => p.currentCard)) {
+        return true; // 이미 시작되었으므로 성공으로 간주하고 true 반환
+    }
+
     // 덱이 2장 미만이면 새로 생성
     if (room.deck.length < 2) {
       room.deck = this.createDeck();
@@ -139,9 +146,14 @@ class IndianPokerManager {
       } else {
         // 칩이 부족하면 게임 종료 (패배)
         room.status = 'finished';
-        return;
+        return; // 여기서는 return만 하면 forEach 콜백만 종료됨에 주의 (전체 로직 흐름에는 영향 X)
       }
     });
+    
+    // 게임 종료 조건에 걸렸다면 false 반환
+    if (room.status === 'finished') {
+        return true; // 상태 업데이트를 위해 true 반환
+    }
 
     // 카드 배분
     room.players.forEach(player => {
@@ -160,6 +172,9 @@ class IndianPokerManager {
     room.currentBetAmount = 1; // 스타트 배팅 금액
     room.status = 'betting';
     room.lastAction = null;
+
+    // 반드시 true를 반환해야 index.js에서 if(success)를 통과함
+    return true; 
   }
 
   // 배팅
@@ -358,7 +373,7 @@ class IndianPokerManager {
     room.players.forEach(p => p.totalBet = 0);
 
     // 다음 라운드 시작
-    this.startNewRound(room);
+    // this.startNewRound(room);
 
     return {
       winner: winner ? { id: winner.id, nickname: winner.nickname } : null,

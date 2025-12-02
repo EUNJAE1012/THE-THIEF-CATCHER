@@ -114,7 +114,7 @@ const LandingPage = () => {
             className={`game-tab ${selectedGame === 'indian-poker' ? 'active' : ''}`}
             onClick={() => setSelectedGame('indian-poker')}
           >
-            인디언 포커
+            인디언<br/> 포커
           </button>
         </motion.div>
 

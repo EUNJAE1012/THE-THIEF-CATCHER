@@ -530,6 +530,46 @@ io.on('connection', (socket) => {
     });
   });
 
+    socket.on("indian-poker-next-round", (callback) => {
+    const { roomCode } = socket;
+    
+    // 1. 방어 및 GameManager 인스턴스 획득 (ReferenceError 방지)
+    if (!roomCode) {
+        return callback && callback({ success: false, error: "방 코드가 없습니다." });
+    }
+
+    const roomResult = gameManagerFactory.getRoom(roomCode);
+    
+    if (!roomResult || roomResult.gameType !== 'indian-poker') {
+        return callback && callback({ success: false, error: "유효하지 않은 방 또는 게임 타입입니다." });
+    }
+
+    // ⭐️ 핵심 수정: room과 manager를 구조분해 할당하여 사용합니다.
+    const { room, manager } = roomResult;
+
+    // 2. 새 라운드 시작
+    // GameManager가 roomCode를 인자로 받는다고 가정합니다.
+    const success = manager.startNewRound(room); 
+
+    if (success) {
+        // 3. 각 플레이어에게 맞춤형 뷰 전송 (상태 불일치/카드 누락 해결)
+        room.players.forEach(p => {
+            const playerSocket = io.sockets.sockets.get(p.id);
+            if (playerSocket) {
+                playerSocket.emit('indian-poker-state-update', {
+                    // ⭐️ getPlayerView를 사용하여 상대방 카드만 보이게 합니다.
+                    gameState: manager.getPlayerView(roomCode, p.id) 
+                });
+            }
+        });
+        
+            // 클라이언트 콜백이 있다면 성공 알림
+            callback && callback({ success: true });
+        } else {
+            callback && callback({ success: false, error: "새 라운드 시작에 실패했습니다." });
+        }
+    });
+
   // 채팅
   socket.on('chat-message', ({ message }) => {
     const { roomCode, playerId } = socket;

@@ -26,3 +26,4 @@ client/.env.production
 # AI Tools
 CLAUDE.md
 .plan.md
+.claude/

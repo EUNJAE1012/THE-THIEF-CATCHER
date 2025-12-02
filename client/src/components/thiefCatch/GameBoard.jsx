@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGame } from '../contexts/GameContext';
-import { useSocket } from '../contexts/SocketContext';
-import Lobby from '../components/common/Lobby';
-import GameBoard from '../components/thiefCatch/GameBoard';
-import Chat from '../components/common/Chat';
-import VideoGrid from '../components/common/VideoGrid';
-import GameOver from '../components/thiefCatch/GameOver';
+import { useGame } from '../../contexts/GameContext';
+import { useSocket } from '../../contexts/SocketContext';
+import Lobby from '../common/Lobby';
+import GameBoard from './GameBoard';
+import Chat from '../common/Chat';
+import VideoGrid from '../common/VideoGrid';
+import GameOver from './GameOver';
 // ------------------------------------------------------------------
 // 인디언 포커 완성된 컴포넌트 import
-import IndianPokerBoard from '../components/IndianPoker/IndianPokerBoard';
+import IndianPokerBoard from '../IndianPoker/IndianPokerBoard';
 // ------------------------------------------------------------------
-import './GameRoom.css';
+import '../../pages/GameRoom.css';
 
 // 삭제: 임시 IndianPokerBoard 컴포넌트 제거
 

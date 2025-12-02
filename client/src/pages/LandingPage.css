@@ -25,6 +25,10 @@
 .game-tab {
   flex: 1;
   padding: 12px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  white-space: nowrap;
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -36,6 +40,7 @@
   position: relative;
   overflow: hidden;
 }
+
 
 .game-tab::before {
   content: '';
