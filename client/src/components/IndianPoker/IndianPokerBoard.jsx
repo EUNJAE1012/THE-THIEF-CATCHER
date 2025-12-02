@@ -500,25 +500,7 @@ const IndianPokerBoard = () => {
       <div className={`player-area opponent-area ${currentBetterId === opponent?.id ? 'active-turn' : ''}`}>
 
 
-        <div className="player-info">
 
-          <span className="player-nickname">{opponent?.nickname || '상대'}</span>
-
-          <div className="chips-display">
-
-            <span className="chip-icon">🪙</span>
-
-            <span className="chip-count">{opponent?.chips || 0}</span>
-
-            <span className="bet-status">
-
-              (Bet: {opponent?.totalBet || 0})
-
-            </span>
-
-          </div>
-
-        </div>
         <div className="video-container">
 
           <video ref={opponentVideoRef} autoPlay playsInline className="player-video" />
@@ -556,6 +538,25 @@ const IndianPokerBoard = () => {
           </div>
 
          
+          <div className="player-info">
+
+          <span className="player-nickname">{opponent?.nickname || '상대'}</span>
+
+          <div className="chips-display">
+
+            <span className="chip-icon">🪙</span>
+
+            <span className="chip-count">{opponent?.chips || 0}</span>
+
+            <span className="bet-status">
+
+              (Bet: {opponent?.totalBet || 0})
+
+            </span>
+
+          </div>
+
+          </div>
 
           {/* 승리/패배 표시 (Reveal 시) */}
 
@@ -587,15 +588,16 @@ const IndianPokerBoard = () => {
       {/* 본인 영역 (6시) */}
 
       <div className={`player-area my-area ${isMyTurn ? 'active-turn' : ''}`}>
-                  <div className="video-container">
+                  
+          <div className="video-container">
 
-          <video ref={myVideoRef} autoPlay playsInline muted className="player-video" />
+            <video ref={myVideoRef} autoPlay playsInline muted className="player-video" />
 
-          {!localStream && (
+            {!localStream && (
 
-            <div className="video-placeholder"><span>{me?.nickname?.charAt(0)}</span></div>
+              <div className="video-placeholder"><span>{me?.nickname?.charAt(0)}</span></div>
 
-          )}
+            )}
 
          
 
@@ -641,7 +643,25 @@ const IndianPokerBoard = () => {
 
           </div>
 
+          <div className="player-info">
 
+          <span className="player-nickname">{me?.nickname || '나'}</span>
+
+          <div className="chips-display">
+
+            <span className="chip-icon">🪙</span>
+
+            <span className="chip-count">{me?.chips || 0}</span>
+
+            <span className="bet-status">
+
+              (Bet: {me?.totalBet || 0})
+
+            </span>
+
+          </div>
+
+         </div>
 
           {/* 승리/패배 표시 (Reveal 시) */}
 
@@ -664,25 +684,8 @@ const IndianPokerBoard = () => {
           )}
 
         </div>
-        <div className="player-info">
 
-          <span className="player-nickname">{me?.nickname || '나'}</span>
 
-          <div className="chips-display">
-
-            <span className="chip-icon">🪙</span>
-
-            <span className="chip-count">{me?.chips || 0}</span>
-
-            <span className="bet-status">
-
-              (Bet: {me?.totalBet || 0})
-
-            </span>
-
-          </div>
-
-        </div>
 
        
 

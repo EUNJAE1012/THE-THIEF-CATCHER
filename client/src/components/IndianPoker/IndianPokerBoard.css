@@ -26,7 +26,7 @@
 /* Player Areas */
 .player-area {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; 
   align-items: center;
   gap: 15px;
   z-index: 1;
@@ -113,41 +113,64 @@
   z-index: 20;
   white-space: nowrap;
 }
-  .player-info {
-    /* 기존: flex-direction: column; */
-    flex-direction: row; /* 가로로 배치 */
-    align-items: center;
-    justify-content: center; /* 가운데 정렬 (필요시 space-between 등 사용) */
-    padding: 6px 12px; /* 패딩을 줄여서 크기 축소 */
-    gap: 10px; /* 닉네임과 칩 표시 사이 간격 */
-    max-width: fit-content; /* 내용물만큼만 너비 차지 */
-    background: rgba(15, 23, 42, 0.8);
-    border-radius: 12px;
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    backdrop-filter: blur(4px);
-  }
 
-  /* 닉네임 크기 축소 */
-  .player-nickname {
-    font-size: 14px;
-    white-space: nowrap;
-    font-weight: bold;
-    color: #e2e8f0;
-  }
-
-  /* 칩 표시 영역 레이아웃 변경 (닉네임과 같은 줄에 위치) */
-  .chips-display {
-    /* display: flex; (기존) */
-    align-items: center;
-    gap: 4px; /* 내부 요소 간격 축소 */
-  }
-
-.bet-status {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-left: 4px;
+.player-area .player-info {
+  /* 💥 오버레이 위치 속성은 유지 */
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  
+  /* 💥 내부 레이아웃 수정: 한 줄로 바짝 붙여서 */
+  display: flex;
+  flex-direction: row; /* 👈 수정: 가로로 배치 */
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* 👈 수정: 닉네임과 칩 섹션 사이의 간격 */
+  
+  /* 💥 크기 축소 */
+  padding: 4px 10px; /* 👈 수정: 패딩 축소 */
+  max-width: fit-content;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 10px; /* 둥글기 약간 축소 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* 닉네임 크기 축소 */
+.player-nickname {
+  font-size: 12px; /* 👈 수정: 14px -> 12px */
+  white-space: nowrap;
+  font-weight: bold;
+  color: #e2e8f0;
+}
+
+/* 칩 표시 영역 레이아웃 (칩 아이콘과 개수 사이 간격) */
+.chips-display {
+  display: flex;
+  align-items: center;
+  gap: 3px; /* 👈 수정: 내부 간격 더 축소 */
+}
+
+/* 칩 개수 크기 축소 */
+.chip-count {
+  font-size: 16px; /* 👈 수정: 18px -> 16px */
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.bet-status {
+  display: inline; 
+  font-size: 10px;
+  color: #b0bec5; 
+  margin-left: 4px; 
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+/* 칩 개수 크기 (유지) */
 .chip-count {
   font-size: 18px;
   font-weight: bold;
